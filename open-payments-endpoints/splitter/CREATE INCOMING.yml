@@ -1,0 +1,21 @@
+info:
+  name: CREATE INCOMING
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:4001/incoming-payment
+  body:
+    type: json
+    data: |-
+      {
+        "wallet": "https://wallet.interledger-test.dev/mochi"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/whoAngeel/openpayments/internal/splitter/service"
+
+	rs "github.com/interledger/open-payments-go/generated/resourceserver"
 )
 
 type SplitHandler struct {
@@ -60,4 +62,42 @@ func (h *SplitHandler) GetWallet(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusAccepted, gin.H{"wallet": walletInfo})
+}
+
+type GrantResponse struct {
+	AccessToken string `json:"access_token"`
+	ManageURL   string `json:"manage_url"`
+}
+
+type IncomingPaymentGrantRequest struct {
+	Wallet string `json:"wallet" binding:"required"`
+}
+
+func (h *SplitHandler) CreateIncomingPaymentGrant(c *gin.Context) {
+	var req IncomingPaymentGrantRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Warn("invalid incoming payment grant request", "err", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
+	grant, err := h.svc.CreateIncomingPaymentGrant(ctx, req.Wallet)
+	if err != nil {
+		h.log.Error("creating incoming payment grant", "err", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, GrantResponse{
+		AccessToken: grant.AccessToken.Value,
+		ManageURL:   grant.AccessToken.Manage,
+	})
+}
+
+type IncomingPaymentResult struct {
+	Wallet          string
+	IncomingPayment *rs.IncomingPayment
 }

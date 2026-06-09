@@ -38,6 +38,7 @@ func main() {
 
 	router.GET("/health", healthHandler.Health)
 	router.POST("/split", splitHandler.Split)
+	router.POST("/incoming-payment", splitHandler.CreateIncomingPaymentGrant)
 	router.GET("/wallet", splitHandler.GetWallet)
 
 	logger.Info("starting server", "port", 4001)
