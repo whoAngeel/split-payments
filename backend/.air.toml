@@ -1,29 +1,34 @@
 root = "."
 tmp_dir = "tmp"
 
+env_files = [".env"]
+
 [build]
-  cmd = "go build -o ./tmp/splitter ./cmd/splitter"
-  bin = "tmp/splitter"
-  include_ext = ["go", "tpl", "tmpl", "html"]
-  exclude_dir = ["tmp", "vendor"]
-  exclude_file = []
-  exclude_regex = ["_test.go"]
-  exclude_unchanged = true
-  full_bin = ""
-  log = "build-errors.log"
-  poll = false
-  poll_interval = 0
-  delay = 0
-  stop_on_error = true
-  rerun = false
-  rerun_delay = 500
+cmd = "go build -o ./tmp/splitter ./cmd/splitter"
+entrypoint = ["./tmp/splitter"]
+include_ext = ["go", "tpl", "tmpl", "html"]
+exclude_dir = ["tmp", "vendor", ".git"]
+exclude_regex = ["_test\\.go"]
+exclude_unchanged = true
+log = "build-errors.log"
+delay = 1000
+stop_on_error = true
+send_interrupt = true
+kill_delay = 500
 
 [color]
-  main = "lightblue"
-  watcher = "green"
-  build = "yellow"
-  runner = "magenta"
+main = "lightblue"
+watcher = "green"
+build = "yellow"
+runner = "magenta"
 
 [log]
-  time = true
-  main_only = false
+time = true
+main_only = false
+
+[misc]
+clean_on_exit = true
+
+[screen]
+clear_on_rebuild = true
+keep_scroll = true

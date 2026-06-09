@@ -37,6 +37,7 @@ app/.metadata
 # Temporary
 tmp/
 temp/
+build-errors.log
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/flutter,go
