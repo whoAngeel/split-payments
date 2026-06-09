@@ -4,13 +4,13 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/whoAngeel/openpayments/internal/gallery/handler"
 	"github.com/whoAngeel/openpayments/internal/shared/logging"
-	"github.com/whoAngeel/openpayments/internal/splitter/handler"
 )
 
 func main() {
 	logger := logging.New(logging.Config{
-		Service: "splitter",
+		Service: "gallery",
 		Level:   os.Getenv("LOG_LEVEL"),
 		Format:  os.Getenv("LOG_FORMAT"),
 	})
@@ -19,14 +19,10 @@ func main() {
 	router.Use(logging.GinMiddleware(logger))
 	router.Use(gin.Recovery())
 
-	healthHandler := handler.NewHealthHandler(logger)
-	splitHandler := handler.NewSplitHandler(logger)
+	router.GET("/health", handler.Health)
 
-	router.GET("/health", healthHandler.Health)
-	router.POST("/split", splitHandler.Split)
-
-	logger.Info("starting server", "port", 4001)
-	if err := router.Run(":4001"); err != nil {
+	logger.Info("starting server", "port", 4000)
+	if err := router.Run(":4000"); err != nil {
 		logger.Fatal("server failed", "err", err)
 	}
 }
