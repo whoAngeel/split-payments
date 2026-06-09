@@ -1,0 +1,6 @@
+name: local
+variables:
+  - name: split_host
+    value: http://localhost:4001
+  - name: gallery_host
+    value: http://localhost:4000

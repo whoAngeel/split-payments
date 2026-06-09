@@ -1,0 +1,27 @@
+info:
+  name: SPLIT
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{split_host}}/split"
+  body:
+    type: json
+    data: |-
+      {
+        "sender": "whoangel",
+        "shares": [
+          {
+            "wallet": "gallery",
+            "amount": "100"
+          }
+        ]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
