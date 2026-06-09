@@ -1,0 +1,39 @@
+# Dependencies
+backend/vendor/
+
+# Build output
+backend/cmd/splitter/splitter
+backend/cmd/gallery/gallery
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.key
+*.pem
+!/backend/dev.key
+
+# Flutter
+app/.dart_tool/
+app/.packages
+app/build/
+app/*.iml
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.metadata
+
+# Go test
+*.test
+*.out
+
+# Temporary
+tmp/
+temp/
