@@ -5,7 +5,11 @@ info:
 
 http:
   method: GET
-  url: "{{split_host}}/wallet"
+  url: "{{split_host}}/wallet/?url=https://ilp.interledger-test.dev/mochi"
+  params:
+    - name: url
+      value: https://ilp.interledger-test.dev/mochi
+      type: query
   auth: inherit
 
 settings:

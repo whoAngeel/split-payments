@@ -1,0 +1,29 @@
+info:
+  name: OUTGOING GRANT
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{split_host}}/outgoing-grant"
+  body:
+    type: json
+    data: |-
+      {
+        "sender_wallet": "https://ilp.interledger-test.dev/angeel",
+        "total_debit_amount": "{{total_debit_amount}}"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        bru.setVar('session_id', res.body.session_id);
+        bru.setVar('redirect_url', res.body.redirect_url);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

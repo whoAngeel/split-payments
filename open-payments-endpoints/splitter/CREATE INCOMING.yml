@@ -5,14 +5,20 @@ info:
 
 http:
   method: POST
-  url: http://localhost:4001/incoming-payment
+  url: "{{split_host}}/incoming-payment"
   body:
     type: json
     data: |-
       {
-        "wallet": "https://wallet.interledger-test.dev/mochi"
+        "wallet": "https://ilp.interledger-test.dev/angeel",
+        "amount": "500"
       }
   auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: bru.setVar('incoming_payment_id', res.body.id);
 
 settings:
   encodeUrl: true

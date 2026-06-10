@@ -1,0 +1,28 @@
+info:
+  name: OUTGOING PAYMENT
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{split_host}}/outgoing-payment"
+  body:
+    type: json
+    data: |-
+      {
+        "sender_wallet": "https://ilp.interledger-test.dev/angeel",
+        "quote_id": "{{quote_id}}",
+        "access_token": "{{access_token}}"
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: access_token
+      value: 107FC4272E822D9A570C
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

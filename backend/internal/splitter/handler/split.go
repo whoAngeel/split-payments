@@ -7,10 +7,7 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/whoAngeel/openpayments/internal/splitter/service"
-
-	rs "github.com/interledger/open-payments-go/generated/resourceserver"
 )
 
 type SplitHandler struct {
@@ -32,11 +29,6 @@ type ShareItem struct {
 	Amount string `json:"amount" binding:"required"`
 }
 
-type SplitResponse struct {
-	SessionID string `json:"session_id"`
-	Status    string `json:"status"`
-}
-
 func (h *SplitHandler) Split(c *gin.Context) {
 	var req SplitRequest
 
@@ -46,9 +38,22 @@ func (h *SplitHandler) Split(c *gin.Context) {
 		return
 	}
 
-	sessionID := uuid.New().String()
-	h.log.Info("split session created", "session_id", sessionID, "shares", len(req.Shares))
-	c.JSON(http.StatusAccepted, SplitResponse{SessionID: sessionID, Status: "pending"})
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
+
+	shares := make([]service.ShareInput, len(req.Shares))
+	for i, s := range req.Shares {
+		shares[i] = service.ShareInput{Wallet: s.Wallet, Amount: s.Amount}
+	}
+
+	result, err := h.svc.InitiateSplit(ctx, req.SenderWallet, shares)
+	if err != nil {
+		h.log.Error("initiating split", "err", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 func (h *SplitHandler) GetWallet(c *gin.Context) {
@@ -58,25 +63,21 @@ func (h *SplitHandler) GetWallet(c *gin.Context) {
 	wallet := c.Query("url")
 	walletInfo, err := h.svc.GetWalletInfo(ctx, wallet)
 	if err != nil {
-		h.log.Fatal("Error handling wallet info", "error", err)
+		h.log.Error("getting wallet info", "err", err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
 	}
 
-	c.JSON(http.StatusAccepted, gin.H{"wallet": walletInfo})
+	c.JSON(http.StatusOK, gin.H{"wallet": walletInfo})
 }
 
-type GrantResponse struct {
-	AccessToken string `json:"access_token"`
-	ManageURL   string `json:"manage_url"`
-}
-
-type IncomingPaymentGrantRequest struct {
-	Wallet string `json:"wallet" binding:"required"`
-}
-
-func (h *SplitHandler) CreateIncomingPaymentGrant(c *gin.Context) {
-	var req IncomingPaymentGrantRequest
+func (h *SplitHandler) CreateIncomingPayment(c *gin.Context) {
+	var req struct {
+		Wallet string `json:"wallet" binding:"required"`
+		Amount string `json:"amount" binding:"required"`
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.log.Warn("invalid incoming payment grant request", "err", err)
+		h.log.Warn("invalid incoming payment request", "err", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -84,20 +85,144 @@ func (h *SplitHandler) CreateIncomingPaymentGrant(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	grant, err := h.svc.CreateIncomingPaymentGrant(ctx, req.Wallet)
+	incoming, err := h.svc.CreateIncomingPayment(ctx, req.Wallet, req.Amount)
 	if err != nil {
-		h.log.Error("creating incoming payment grant", "err", err)
+		h.log.Error("creating incoming payment", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, GrantResponse{
-		AccessToken: grant.AccessToken.Value,
-		ManageURL:   grant.AccessToken.Manage,
+	c.JSON(http.StatusOK, incoming)
+}
+
+type CreateQuoteRequest struct {
+	SenderWallet      string `json:"sender_wallet" binding:"required"`
+	IncomingPaymentID string `json:"incoming_payment_id" binding:"required"`
+}
+
+func (h *SplitHandler) CreateQuote(c *gin.Context) {
+	var req CreateQuoteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Warn("invalid quote request", "err", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
+	quote, err := h.svc.CreateQuote(ctx, req.SenderWallet, req.IncomingPaymentID)
+	if err != nil {
+		h.log.Error("creating quote", "err", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, quote)
+}
+
+type OutgoingGrantRequest struct {
+	SenderWallet     string `json:"sender_wallet" binding:"required"`
+	TotalDebitAmount string `json:"total_debit_amount" binding:"required"`
+}
+
+func (h *SplitHandler) RequestOutgoingPaymentGrant(c *gin.Context) {
+	var req OutgoingGrantRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Warn("invalid outgoing grant request", "err", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
+	result, err := h.svc.RequestOutgoingPaymentGrant(ctx, req.SenderWallet, req.TotalDebitAmount)
+	if err != nil {
+		h.log.Error("requesting outgoing payment grant", "err", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *SplitHandler) Callback(c *gin.Context) {
+	sessionID := c.Query("session")
+	interactRef := c.Query("interact_ref")
+	hash := c.Query("hash")
+
+	if sessionID == "" || interactRef == "" || hash == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing session, interact_ref or hash"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
+	accessToken, err := h.svc.HandleCallback(ctx, sessionID, interactRef, hash)
+	if err != nil {
+		h.log.Error("callback failed", "err", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":       "authorized",
+		"access_token": accessToken.Value,
+		"manage_url":   accessToken.Manage,
 	})
 }
 
-type IncomingPaymentResult struct {
-	Wallet          string
-	IncomingPayment *rs.IncomingPayment
+func (h *SplitHandler) SplitCallback(c *gin.Context) {
+	sessionID := c.Query("session")
+	interactRef := c.Query("interact_ref")
+	hash := c.Query("hash")
+
+	if sessionID == "" || interactRef == "" || hash == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing session, interact_ref or hash"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+	defer cancel()
+
+	outgoings, err := h.svc.HandleSplitCallback(ctx, sessionID, interactRef, hash)
+	if err != nil {
+		h.log.Error("split callback failed", "err", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":            "completed",
+		"outgoing_payments": outgoings,
+	})
+}
+
+type CreateOutgoingPaymentRequest struct {
+	SenderWallet string `json:"sender_wallet" binding:"required"`
+	QuoteID      string `json:"quote_id" binding:"required"`
+	AccessToken  string `json:"access_token" binding:"required"`
+}
+
+func (h *SplitHandler) CreateOutgoingPayment(c *gin.Context) {
+	var req CreateOutgoingPaymentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Warn("invalid outgoing payment request", "err", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
+	outgoing, err := h.svc.CreateOutgoingPayment(ctx, req.SenderWallet, req.QuoteID, req.AccessToken)
+	if err != nil {
+		h.log.Error("creating outgoing payment", "err", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, outgoing)
 }

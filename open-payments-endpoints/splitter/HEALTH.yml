@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: ""
+  url: "{{split_host}}/health"
   auth: inherit
 
 settings:
