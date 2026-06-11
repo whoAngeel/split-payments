@@ -1,0 +1,25 @@
+info:
+  name: LOGIN
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{gallery_host}}/api/auth/login"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "test@test.com",
+        "password": "password123"
+      }
+  auth: inherit
+
+script:
+  res: "bru.setVar('token', res.body.token);"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

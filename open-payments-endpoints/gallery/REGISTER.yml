@@ -1,0 +1,26 @@
+info:
+  name: REGISTER
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{gallery_host}}/api/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "test@test.com",
+        "password": "password123",
+        "name": "Test User"
+      }
+  auth: inherit
+
+script:
+  res: "bru.setVar('token', res.body.token);"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

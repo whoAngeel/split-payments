@@ -7,6 +7,7 @@ import (
 	"github.com/whoAngeel/openpayments/internal/gallery/config"
 	"github.com/whoAngeel/openpayments/internal/gallery/handler"
 	"github.com/whoAngeel/openpayments/internal/gallery/model"
+	"github.com/whoAngeel/openpayments/internal/gallery/service"
 	"github.com/whoAngeel/openpayments/internal/shared/logging"
 	gormPostgres "gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -44,11 +45,16 @@ func main() {
 
 	logger.Info("database migrated")
 
+	authSvc := service.NewAuthService(db, cfg.JWTSecret)
+	authHandler := handler.NewAuthHandler(authSvc)
+
 	router := gin.New()
 	router.Use(logging.GinMiddleware(logger))
 	router.Use(gin.Recovery())
 
 	router.GET("/health", handler.Health)
+	router.POST("/api/auth/register", authHandler.Register)
+	router.POST("/api/auth/login", authHandler.Login)
 
 	logger.Info("starting server", "port", 4000)
 	if err := router.Run(":4000"); err != nil {

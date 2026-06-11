@@ -5,7 +5,7 @@ import "gorm.io/gorm"
 type User struct {
 	gorm.Model
 	Email            string `gorm:"uniqueIndex;not null"`
-	PasswordHash     string `gorm:"not null"`
+	PasswordHash     string `json:"-" gorm:"not null"`
 	Name             string
 	WalletAddressURL string
 	KeyID            string
