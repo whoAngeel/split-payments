@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: openpayments-postgres
+    environment:
+      POSTGRES_USER: openpayments
+      POSTGRES_PASSWORD: openpayments
+      POSTGRES_DB: openpayments
+    ports:
+      - "5432:5432"
+    volumes:
+      - /Volumes/DockerData/openpayments-postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  adminer:
+    image: adminer:latest
+    container_name: openpayments-adminer
+    ports:
+      - "8070:8080"
+    restart: unless-stopped
