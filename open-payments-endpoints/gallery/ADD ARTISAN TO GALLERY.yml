@@ -1,0 +1,18 @@
+info:
+  name: ADD ARTISAN TO GALLERY
+  type: http
+  seq: 11
+
+http:
+  method: POST
+  url: "{{gallery_host}}/api/galleries/{{gallery_id}}/artisans/{{artisan_id}}"
+  headers:
+    - name: Authorization
+      value: "Bearer {{token}}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

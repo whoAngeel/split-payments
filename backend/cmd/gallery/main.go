@@ -80,8 +80,8 @@ func main() {
 		protected.GET("/artisans", artisanHandler.List)
 		protected.GET("/artisans/:id", artisanHandler.Get)
 
-		protected.POST("/artisans/:artisan_id/products", productHandler.Create)
-		protected.GET("/artisans/:artisan_id/products", productHandler.ListByArtisan)
+		protected.POST("/artisans/:id/products", productHandler.Create)
+		protected.GET("/artisans/:id/products", productHandler.ListByArtisan)
 		protected.DELETE("/products/:id", productHandler.Delete)
 	}
 

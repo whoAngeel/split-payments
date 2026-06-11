@@ -1,0 +1,28 @@
+info:
+  name: CREATE ARTISAN
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{gallery_host}}/api/artisans"
+  headers:
+    - name: Authorization
+      value: "Bearer {{token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Artisan Name",
+        "wallet_address_url": "https://ilp.interledger-test.dev/angeel"
+      }
+  auth: inherit
+
+script:
+  res: "bru.setVar('artisan_id', res.body.ID);"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -24,9 +24,9 @@ type createProductRequest struct {
 }
 
 func (h *ProductHandler) Create(c *gin.Context) {
-	artisanID, err := strconv.ParseUint(c.Param("artisan_id"), 10, 64)
+	artisanID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid artisan_id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 
@@ -46,7 +46,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 }
 
 func (h *ProductHandler) ListByArtisan(c *gin.Context) {
-	artisanID, err := strconv.ParseUint(c.Param("artisan_id"), 10, 64)
+	artisanID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid artisan_id"})
 		return

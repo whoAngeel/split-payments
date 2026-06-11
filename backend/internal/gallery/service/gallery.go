@@ -45,21 +45,17 @@ func (s *GalleryService) SetCommission(galleryID, userID uint, rate int) (*model
 		return nil, fmt.Errorf("gallery not found")
 	}
 
-	var commission model.Commission
-	s.db.Where("gallery_id = ?", galleryID).First(&commission)
-
-	commission.GalleryID = galleryID
-	commission.Rate = rate
-
-	if commission.ID != 0 {
-		if err := s.db.Save(&commission).Error; err != nil {
-			return nil, fmt.Errorf("updating commission: %w", err)
-		}
-	} else {
-		if err := s.db.Create(&commission).Error; err != nil {
-			return nil, fmt.Errorf("creating commission: %w", err)
-		}
+	commission := model.Commission{
+		GalleryID: galleryID,
+		Rate:      rate,
 	}
+
+	if err := s.db.Where("gallery_id = ?", galleryID).
+		Assign(model.Commission{Rate: rate}).
+		FirstOrCreate(&commission).Error; err != nil {
+		return nil, fmt.Errorf("setting commission: %w", err)
+	}
+
 	return &commission, nil
 }
 
