@@ -62,7 +62,7 @@ func (s *PaymentService) GetWalletInfo(ctx context.Context, walletURL string) (*
 	return &walletAddress, nil
 }
 
-func (s *PaymentService) CreateIncomingPayment(ctx context.Context, walletURL, amount string) (*rs.IncomingPaymentWithMethods, error) {
+func (s *PaymentService) CreateIncomingPayment(ctx context.Context, walletURL, amount string, metadata map[string]interface{}) (*rs.IncomingPaymentWithMethods, error) {
 	walletAddress, err := s.GetWalletInfo(ctx, walletURL)
 	if err != nil {
 		return nil, fmt.Errorf("getting wallet address info: %w", err)
@@ -107,6 +107,7 @@ func (s *PaymentService) CreateIncomingPayment(ctx context.Context, walletURL, a
 				AssetCode:  walletAddress.AssetCode,
 				AssetScale: walletAddress.AssetScale,
 			},
+			Metadata: &metadata,
 		},
 	})
 	if err != nil {
@@ -314,6 +315,9 @@ func (s *PaymentService) CreateOutgoingPayment(ctx context.Context, senderWallet
 	payload.FromCreateOutgoingPaymentWithQuote(rs.CreateOutgoingPaymentWithQuote{
 		WalletAddressSchema: *walletAddress.Id,
 		QuoteId:             quoteID,
+		Metadata: &map[string]interface{}{
+			"description": "Split payment",
+		},
 	})
 
 	s.log.Debug("creating outgoing payment",
@@ -335,8 +339,9 @@ func (s *PaymentService) CreateOutgoingPayment(ctx context.Context, senderWallet
 }
 
 type ShareInput struct {
-	Wallet string
-	Amount string
+	Wallet   string
+	Amount   string
+	Metadata map[string]interface{}
 }
 
 type splitQuote struct {
@@ -351,7 +356,7 @@ func (s *PaymentService) InitiateSplit(ctx context.Context, senderWalletURL stri
 
 	var incomings []incomingResult
 	for _, share := range shares {
-		incoming, err := s.CreateIncomingPayment(ctx, share.Wallet, share.Amount)
+		incoming, err := s.CreateIncomingPayment(ctx, share.Wallet, share.Amount, share.Metadata)
 		if err != nil {
 			return nil, fmt.Errorf("incoming payment for %s: %w", share.Wallet, err)
 		}

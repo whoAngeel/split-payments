@@ -2,11 +2,13 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/charmbracelet/log"
 	"github.com/gin-gonic/gin"
+	"github.com/whoAngeel/openpayments/internal/shared/model"
 	"github.com/whoAngeel/openpayments/internal/splitter/service"
 )
 
@@ -20,13 +22,8 @@ func NewSplitHandler(logger *log.Logger, svc *service.PaymentService) *SplitHand
 }
 
 type SplitRequest struct {
-	SenderWallet string      `json:"sender_wallet" binding:"required"`
-	Shares       []ShareItem `json:"shares" binding:"required,min=1"`
-}
-
-type ShareItem struct {
-	Wallet string `json:"wallet" binding:"required"`
-	Amount string `json:"amount" binding:"required"`
+	SenderWallet string         `json:"sender_wallet" binding:"required"`
+	Shares       []model.Share `json:"shares" binding:"required,min=1"`
 }
 
 func (h *SplitHandler) Split(c *gin.Context) {
@@ -42,8 +39,15 @@ func (h *SplitHandler) Split(c *gin.Context) {
 	defer cancel()
 
 	shares := make([]service.ShareInput, len(req.Shares))
+	total := len(req.Shares)
 	for i, s := range req.Shares {
-		shares[i] = service.ShareInput{Wallet: s.Wallet, Amount: s.Amount}
+		shares[i] = service.ShareInput{
+			Wallet: s.Wallet,
+			Amount: s.Amount,
+			Metadata: map[string]interface{}{
+				"description": fmt.Sprintf("Split payment: share %d of %d", i+1, total),
+			},
+		}
 	}
 
 	result, err := h.svc.InitiateSplit(ctx, req.SenderWallet, shares)
@@ -85,7 +89,7 @@ func (h *SplitHandler) CreateIncomingPayment(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	incoming, err := h.svc.CreateIncomingPayment(ctx, req.Wallet, req.Amount)
+	incoming, err := h.svc.CreateIncomingPayment(ctx, req.Wallet, req.Amount, nil)
 	if err != nil {
 		h.log.Error("creating incoming payment", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -50,11 +50,13 @@ func main() {
 	gallerySvc := service.NewGalleryService(db)
 	artisanSvc := service.NewArtisanService(db)
 	productSvc := service.NewProductService(db)
+	checkoutSvc := service.NewCheckoutService(db, cfg.SplitterURL, cfg.SplitterAPIKey)
 
 	authHandler := handler.NewAuthHandler(authSvc)
 	galleryHandler := handler.NewGalleryHandler(gallerySvc)
 	artisanHandler := handler.NewArtisanHandler(artisanSvc)
 	productHandler := handler.NewProductHandler(productSvc)
+	checkoutHandler := handler.NewCheckoutHandler(checkoutSvc)
 
 	router := gin.New()
 	router.Use(logging.GinMiddleware(logger))
@@ -83,6 +85,7 @@ func main() {
 		protected.POST("/artisans/:id/products", productHandler.Create)
 		protected.GET("/artisans/:id/products", productHandler.ListByArtisan)
 		protected.DELETE("/products/:id", productHandler.Delete)
+		protected.POST("/checkout", checkoutHandler.Checkout)
 	}
 
 	logger.Info("starting server", "port", 4000)

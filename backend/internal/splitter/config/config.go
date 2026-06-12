@@ -11,6 +11,7 @@ type Config struct {
 	WalletAddressURL string
 	PrivateKeyBase64 string
 	KeyID            string
+	APIKey           string
 }
 
 func Load() *Config {
@@ -27,5 +28,6 @@ func Load() *Config {
 		WalletAddressURL: os.Getenv("WALLET_ADDRESS_URL"),
 		PrivateKeyBase64: keyBase64,
 		KeyID:            os.Getenv("KEY_ID"),
+		APIKey:           os.Getenv("SPLITTER_API_KEY"),
 	}
 }

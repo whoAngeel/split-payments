@@ -1,0 +1,30 @@
+info:
+  name: CHECKOUT
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: "{{gallery_host}}/api/checkout"
+  headers:
+    - name: Authorization
+      value: "Bearer {{token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "product_id": 1,
+        "buyer_wallet": "https://ilp.interledger-test.dev/angeel"
+      }
+  auth: inherit
+
+script:
+  res: |-
+    bru.setVar('session_id', res.body.session_id);
+    bru.setVar('redirect_url', res.body.redirect_url);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

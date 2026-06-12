@@ -42,6 +42,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	db.Exec("TRUNCATE TABLE gallery_artisans, products, commissions, galleries, artisans, users RESTART IDENTITY CASCADE")
+	fmt.Println("Tables truncated")
+
 	authSvc := service.NewAuthService(db, "dev-secret-change-in-production")
 	gallerySvc := service.NewGalleryService(db)
 	artisanSvc := service.NewArtisanService(db)
@@ -49,8 +52,10 @@ func main() {
 
 	user, _, err := authSvc.Register("gallery@art.com", "password123", "Gallery Owner")
 	if err != nil {
-		fmt.Println("register user:", err)
+		fmt.Println("user already exists, using existing")
+		db.Where("email = ?", "gallery@art.com").First(&user)
 	}
+	db.Model(&user).Update("wallet_address_url", "https://ilp.interledger-test.dev/angeel")
 
 	gallery, err := gallerySvc.CreateGallery(user.ID, "Galería Oaxaca")
 	if err != nil {

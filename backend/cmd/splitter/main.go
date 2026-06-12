@@ -8,6 +8,7 @@ import (
 	"github.com/whoAngeel/openpayments/internal/shared/logging"
 	"github.com/whoAngeel/openpayments/internal/splitter/config"
 	"github.com/whoAngeel/openpayments/internal/splitter/handler"
+	"github.com/whoAngeel/openpayments/internal/splitter/middleware"
 	"github.com/whoAngeel/openpayments/internal/splitter/service"
 )
 
@@ -37,16 +38,23 @@ func main() {
 	splitHandler := handler.NewSplitHandler(logger, paymentService)
 
 	router.GET("/health", healthHandler.Health)
-	router.POST("/split", splitHandler.Split)
-	router.POST("/incoming-payment", splitHandler.CreateIncomingPayment)
-	router.POST("/quote", splitHandler.CreateQuote)
-	router.POST("/outgoing-grant", splitHandler.RequestOutgoingPaymentGrant)
 	router.GET("/split/callback", splitHandler.SplitCallback)
-	router.POST("/outgoing-payment", splitHandler.CreateOutgoingPayment)
-	router.GET("/wallet", splitHandler.GetWallet)
+
+	api := router.Group("/")
+	api.Use(middleware.APIKey(cfg.APIKey))
+	{
+		api.POST("/split", splitHandler.Split)
+		api.POST("/incoming-payment", splitHandler.CreateIncomingPayment)
+		api.POST("/quote", splitHandler.CreateQuote)
+		api.POST("/outgoing-grant", splitHandler.RequestOutgoingPaymentGrant)
+		api.POST("/outgoing-payment", splitHandler.CreateOutgoingPayment)
+		api.GET("/wallet", splitHandler.GetWallet)
+	}
 
 	logger.Info("starting server", "port", 4001)
 	if err := router.Run(":4001"); err != nil {
 		logger.Fatal("server failed", "err", err)
 	}
 }
+
+
