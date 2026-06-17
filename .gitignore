@@ -130,4 +130,5 @@ lib/generated_plugin_registrant.dart
 # Go workspace file
 go.work
 
-# End of https://www.toptal.com/developers/gitignore/api/flutter,go
+# End of https://www.toptal.com/developers/gitignore/api/flutter,gobackend/gallery.db
+backend/seed

@@ -15,13 +15,14 @@ func NewProductService(db *gorm.DB) *ProductService {
 	return &ProductService{db: db}
 }
 
-func (s *ProductService) Create(artisanID uint, name, assetCode string, basePrice int64, assetScale int) (*model.Product, error) {
+func (s *ProductService) Create(artisanID uint, name, assetCode string, basePrice int64, assetScale int, imageURL string) (*model.Product, error) {
 	product := model.Product{
 		ArtisanID:  artisanID,
 		Name:       name,
 		BasePrice:  basePrice,
 		AssetCode:  assetCode,
 		AssetScale: assetScale,
+		ImageURL:   imageURL,
 	}
 	if err := s.db.Create(&product).Error; err != nil {
 		return nil, fmt.Errorf("creating product: %w", err)

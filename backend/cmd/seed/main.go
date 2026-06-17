@@ -42,45 +42,66 @@ func main() {
 		os.Exit(1)
 	}
 
-	db.Exec("TRUNCATE TABLE gallery_artisans, products, commissions, galleries, artisans, users RESTART IDENTITY CASCADE")
-	fmt.Println("Tables truncated")
-
 	authSvc := service.NewAuthService(db, "dev-secret-change-in-production")
 	gallerySvc := service.NewGalleryService(db)
 	artisanSvc := service.NewArtisanService(db)
 	productSvc := service.NewProductService(db)
 
-	user, _, err := authSvc.Register("gallery@art.com", "password123", "Gallery Owner")
-	if err != nil {
-		fmt.Println("user already exists, using existing")
-		db.Where("email = ?", "gallery@art.com").First(&user)
+	seedUser := func(email, password, name, wallet string) model.User {
+		var u model.User
+		db.Where("email = ?", email).First(&u)
+		if u.ID == 0 {
+			newUser, _, err := authSvc.Register(email, password, name)
+			if err != nil {
+				fmt.Printf("register %s: %v\n", email, err)
+				os.Exit(1)
+			}
+			u = *newUser
+			fmt.Printf("User: %s <%s>\n", name, email)
+		}
+		if wallet != "" {
+			db.Model(&u).Update("wallet_address_url", wallet)
+		}
+		return u
 	}
-	db.Model(&user).Update("wallet_address_url", "https://ilp.interledger-test.dev/angeel")
 
-	gallery, err := gallerySvc.CreateGallery(user.ID, "Galería Oaxaca")
-	if err != nil {
-		fmt.Println("create gallery:", err)
+	galleryOwner := seedUser("gallery@art.com", "password123", "Gallery Owner", "https://ilp.interledger-test.dev/angeel")
+	seedUser("buyer@test.com", "password123", "Carlos Comprador", "https://ilp.interledger-test.dev/angeel")
+	fmt.Println()
+
+	var count int64
+	db.Model(&model.Gallery{}).Where("user_id = ?", galleryOwner.ID).Count(&count)
+	var gallery model.Gallery
+	if count == 0 {
+		newGallery, gErr := gallerySvc.CreateGallery(galleryOwner.ID, "Galería Oaxaca")
+		if gErr != nil {
+			fmt.Println("create gallery:", gErr)
+			os.Exit(1)
+		}
+		gallery = *newGallery
+		_, _ = gallerySvc.SetCommission(gallery.ID, galleryOwner.ID, 3000)
+		fmt.Println("Commission: 30%")
+	} else {
+		db.Where("user_id = ?", galleryOwner.ID).First(&gallery)
 	}
-	fmt.Printf("Created gallery: %s (ID=%d, owner=%s)\n", gallery.Name, gallery.ID, user.Email)
+	fmt.Printf("Gallery: %s (ID=%d, owner=%s)\n", gallery.Name, gallery.ID, galleryOwner.Email)
 
-	_, err = gallerySvc.SetCommission(gallery.ID, user.ID, 3000)
-	if err != nil {
-		fmt.Println("set commission:", err)
+	var artisanCount int64
+	db.Model(&model.Artisan{}).Count(&artisanCount)
+	if artisanCount == 0 {
+		artisan1, _ := artisanSvc.Create("María Hernández", "https://ilp.interledger-test.dev/mochi")
+		artisan2, _ := artisanSvc.Create("Juan López", "https://ilp.interledger-test.dev/angeel")
+		gallerySvc.AddArtisan(gallery.ID, galleryOwner.ID, artisan1.ID)
+		gallerySvc.AddArtisan(gallery.ID, galleryOwner.ID, artisan2.ID)
+		fmt.Printf("Artisans: %s, %s\n", artisan1.Name, artisan2.Name)
+
+		_, _ = productSvc.Create(artisan1.ID, "Alejibre de madera", "USD", 5000, 2, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400")
+		_, _ = productSvc.Create(artisan1.ID, "Máscara tradicional", "USD", 3500, 2, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400")
+		_, _ = productSvc.Create(artisan2.ID, "Tapete tejido", "USD", 8000, 2, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400")
+		fmt.Println("Products: Alebrije ($50.00), Máscara ($35.00), Tapete ($80.00)")
+	} else {
+		fmt.Println("Data already seeded, skipping.")
 	}
-	fmt.Println("Commission: 30%")
 
-	artisan1, _ := artisanSvc.Create("María Hernández", "https://ilp.interledger-test.dev/angeel")
-	artisan2, _ := artisanSvc.Create("Juan López", "https://ilp.interledger-test.dev/angeel")
-	fmt.Printf("Artisans: %s, %s\n", artisan1.Name, artisan2.Name)
-
-	gallerySvc.AddArtisan(gallery.ID, user.ID, artisan1.ID)
-	gallerySvc.AddArtisan(gallery.ID, user.ID, artisan2.ID)
-	fmt.Println("Artisans linked to gallery")
-
-	_, _ = productSvc.Create(artisan1.ID, "Alejibre de madera", "USD", 5000, 2)
-	_, _ = productSvc.Create(artisan1.ID, "Máscara tradicional", "USD", 3500, 2)
-	_, _ = productSvc.Create(artisan2.ID, "Tapete tejido", "USD", 8000, 2)
-
-	fmt.Println("Products: Alebrije ($50.00), Máscara ($35.00), Tapete ($80.00)")
-	fmt.Println("\nSeed complete.")
+	fmt.Println("Seed complete.")
 }

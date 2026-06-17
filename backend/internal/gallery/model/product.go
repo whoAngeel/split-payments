@@ -8,4 +8,5 @@ type Product struct {
 	BasePrice int64   `json:"base_price" gorm:"not null"`
 	AssetCode string  `json:"asset_code" gorm:"not null"`
 	AssetScale int    `json:"asset_scale" gorm:"not null;default:2"`
+	ImageURL  string  `json:"image_url"`
 }

@@ -27,12 +27,13 @@ func (h *ProductHandler) Explore(c *gin.Context) {
 
 	if !authenticated {
 		type publicProduct struct {
-			ID        uint   `json:"id"`
-			Name      string `json:"name"`
-			BasePrice int64  `json:"base_price"`
-			AssetCode string `json:"asset_code"`
-			AssetScale int   `json:"asset_scale"`
+			ID          uint   `json:"id"`
+			Name        string `json:"name"`
+			BasePrice   int64  `json:"base_price"`
+			AssetCode   string `json:"asset_code"`
+			AssetScale  int    `json:"asset_scale"`
 			ArtisanName string `json:"artisan_name"`
+			ImageURL    string `json:"image_url"`
 		}
 		var result []publicProduct
 		for _, p := range products {
@@ -43,6 +44,7 @@ func (h *ProductHandler) Explore(c *gin.Context) {
 				AssetCode:   p.AssetCode,
 				AssetScale:  p.AssetScale,
 				ArtisanName: p.Artisan.Name,
+				ImageURL:    p.ImageURL,
 			})
 		}
 		c.JSON(http.StatusOK, result)
@@ -58,6 +60,7 @@ type createProductRequest struct {
 	BasePrice  int64  `json:"base_price" binding:"required,min=1"`
 	AssetCode  string `json:"asset_code" binding:"required"`
 	AssetScale int    `json:"asset_scale"`
+	ImageURL   string `json:"image_url"`
 }
 
 func (h *ProductHandler) Create(c *gin.Context) {
@@ -73,7 +76,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		return
 	}
 
-	product, err := h.svc.Create(uint(artisanID), req.Name, req.AssetCode, req.BasePrice, req.AssetScale)
+	product, err := h.svc.Create(uint(artisanID), req.Name, req.AssetCode, req.BasePrice, req.AssetScale, req.ImageURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
