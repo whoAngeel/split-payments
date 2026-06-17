@@ -16,6 +16,43 @@ func NewProductHandler(svc *service.ProductService) *ProductHandler {
 	return &ProductHandler{svc: svc}
 }
 
+func (h *ProductHandler) Explore(c *gin.Context) {
+	products, err := h.svc.ListAll()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID, authenticated := c.Get("userID")
+
+	if !authenticated {
+		type publicProduct struct {
+			ID        uint   `json:"id"`
+			Name      string `json:"name"`
+			BasePrice int64  `json:"base_price"`
+			AssetCode string `json:"asset_code"`
+			AssetScale int   `json:"asset_scale"`
+			ArtisanName string `json:"artisan_name"`
+		}
+		var result []publicProduct
+		for _, p := range products {
+			result = append(result, publicProduct{
+				ID:          p.ID,
+				Name:        p.Name,
+				BasePrice:   p.BasePrice,
+				AssetCode:   p.AssetCode,
+				AssetScale:  p.AssetScale,
+				ArtisanName: p.Artisan.Name,
+			})
+		}
+		c.JSON(http.StatusOK, result)
+		return
+	}
+
+	_ = userID
+	c.JSON(http.StatusOK, products)
+}
+
 type createProductRequest struct {
 	Name       string `json:"name" binding:"required"`
 	BasePrice  int64  `json:"base_price" binding:"required,min=1"`

@@ -37,6 +37,14 @@ func (s *ProductService) GetByArtisan(artisanID uint) ([]model.Product, error) {
 	return products, nil
 }
 
+func (s *ProductService) ListAll() ([]model.Product, error) {
+	var products []model.Product
+	if err := s.db.Preload("Artisan").Order("created_at DESC").Find(&products).Error; err != nil {
+		return nil, fmt.Errorf("listing products: %w", err)
+	}
+	return products, nil
+}
+
 func (s *ProductService) Delete(productID uint) error {
 	if err := s.db.Delete(&model.Product{}, productID).Error; err != nil {
 		return fmt.Errorf("deleting product: %w", err)

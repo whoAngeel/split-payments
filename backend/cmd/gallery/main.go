@@ -63,6 +63,7 @@ func main() {
 	router.Use(gin.Recovery())
 
 	router.GET("/health", handler.Health)
+	router.GET("/api/explore/products", middleware.OptionalAuth(authSvc), productHandler.Explore)
 
 	auth := router.Group("/api/auth")
 	{
