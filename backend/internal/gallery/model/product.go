@@ -1,13 +1,11 @@
 package model
 
-import "gorm.io/gorm"
-
 type Product struct {
-	gorm.Model
-	ArtisanID uint
-	Artisan   Artisan `gorm:"foreignKey:ArtisanID"`
-	Name      string  `gorm:"not null"`
-	BasePrice int64   `gorm:"not null"`
-	AssetCode string  `gorm:"not null"`
-	AssetScale int    `gorm:"not null;default:2"`
+	BaseModel
+	ArtisanID uint    `json:"artisan_id"`
+	Artisan   Artisan `json:"artisan,omitempty" gorm:"foreignKey:ArtisanID"`
+	Name      string  `json:"name" gorm:"not null"`
+	BasePrice int64   `json:"base_price" gorm:"not null"`
+	AssetCode string  `json:"asset_code" gorm:"not null"`
+	AssetScale int    `json:"asset_scale" gorm:"not null;default:2"`
 }

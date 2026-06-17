@@ -1,11 +1,9 @@
 package model
 
-import "gorm.io/gorm"
-
 type Artisan struct {
-	gorm.Model
-	Name             string `gorm:"not null"`
-	WalletAddressURL string
-	Products         []Product  `gorm:"foreignKey:ArtisanID"`
-	Galleries        []Gallery  `gorm:"many2many:gallery_artisans;"`
+	BaseModel
+	Name             string    `json:"name" gorm:"not null"`
+	WalletAddressURL string    `json:"wallet_address_url"`
+	Products         []Product `json:"products,omitempty" gorm:"foreignKey:ArtisanID"`
+	Galleries        []Gallery `json:"-" gorm:"many2many:gallery_artisans;"`
 }
