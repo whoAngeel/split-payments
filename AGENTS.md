@@ -63,3 +63,18 @@ See `docs/adr/`:
 - CONTEXT.md files define domain language per context
 - Use `context.Context` as first param in Go
 - Errors wrapped with `fmt.Errorf("...: %w", err)`
+
+## Flutter Navigation (go_router)
+
+Two navigation modes — using the wrong one causes back gesture to close the app:
+
+| Tipo | Método | Cuándo |
+|------|--------|--------|
+| Tab / shell | `context.go('/ruta')` | Vistas dentro del `ShellRoute` (Explorar, Historial) |
+| Detalle / overlay | `context.push('/ruta')` | Vistas encima del shell (Checkout, Cuenta, Confirmación) |
+
+**Regla:** si la vista vive en el `ShellRoute` → `go`. Si está fuera → `push` + su propio `Scaffold` con `AppBar` (back button aparece automático).
+
+Rutas actuales:
+- Shell (bottom nav): `/explorar`, `/orders`
+- Top-level (push): `/checkout`, `/account`, `/payment/complete`, `/login`, `/register`
