@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 const _terracotta = Color(0xFFC2573A);
 const _tierraClara = Color(0xFFFAF6F3);
@@ -57,4 +58,24 @@ const colorScheme = ColorScheme(
 final themeData = ThemeData(
   colorScheme: colorScheme,
   useMaterial3: true,
+  textTheme: GoogleFonts.interTextTheme().copyWith(
+    displayLarge: GoogleFonts.playfairDisplay(
+      fontSize: 57, fontWeight: FontWeight.w700, letterSpacing: -0.02 * 57,
+    ),
+    displayMedium: GoogleFonts.playfairDisplay(
+      fontSize: 45, fontWeight: FontWeight.w700, letterSpacing: -0.02 * 45,
+    ),
+    displaySmall: GoogleFonts.playfairDisplay(
+      fontSize: 36, fontWeight: FontWeight.w700, letterSpacing: -0.02 * 36,
+    ),
+    headlineLarge: GoogleFonts.playfairDisplay(
+      fontSize: 32, fontWeight: FontWeight.w700, height: 1.25,
+    ),
+    headlineMedium: GoogleFonts.playfairDisplay(
+      fontSize: 28, fontWeight: FontWeight.w700, height: 1.28,
+    ),
+    headlineSmall: GoogleFonts.playfairDisplay(
+      fontSize: 24, fontWeight: FontWeight.w600, height: 1.3,
+    ),
+  ),
 );
