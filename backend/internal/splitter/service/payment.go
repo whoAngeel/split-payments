@@ -31,9 +31,9 @@ type sessionData struct {
 }
 
 type PaymentService struct {
-	client    *op.AuthenticatedClient
-	log       *log.Logger
-	sessions  map[string]*sessionData
+	client     *op.AuthenticatedClient
+	log        *log.Logger
+	sessions   map[string]*sessionData
 	sessionsMu sync.RWMutex
 }
 
@@ -350,11 +350,16 @@ type splitQuote struct {
 }
 
 func (s *PaymentService) InitiateSplit(ctx context.Context, senderWalletURL string, shares []ShareInput) (*OutgoingGrantResult, error) {
+	s.log.Info("InitialSplit", "sender", senderWalletURL, "shares", shares)
 	type incomingResult struct {
 		ID string
 	}
 
 	var incomings []incomingResult
+	s.log.Info("incomming payments created", "count", len(incomings))
+	for i, inc := range incomings {
+		s.log.Info("incoming", "i", i, "id", inc.ID)
+	}
 	for _, share := range shares {
 		incoming, err := s.CreateIncomingPayment(ctx, share.Wallet, share.Amount, share.Metadata)
 		if err != nil {
@@ -365,6 +370,7 @@ func (s *PaymentService) InitiateSplit(ctx context.Context, senderWalletURL stri
 
 	var quotes []splitQuote
 	var totalDebit int64
+
 	for _, inc := range incomings {
 		quote, err := s.CreateQuote(ctx, senderWalletURL, inc.ID)
 		if err != nil {
@@ -391,6 +397,7 @@ func (s *PaymentService) InitiateSplit(ctx context.Context, senderWalletURL stri
 	sessionID := uuid.New().String()
 	nonce := uuid.New().String()
 	totalStr := fmt.Sprintf("%d", totalDebit)
+	s.log.Info("totalDebit calculated", "totalDebit", totalDebit, "totalStr", totalStr)
 
 	outgoingAccess := as.AccessOutgoing{
 		Type: as.OutgoingPayment,

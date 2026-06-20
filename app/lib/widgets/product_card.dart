@@ -1,104 +1,80 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
+import '../models/product.dart';
 import 'app_card.dart';
+import 'split_payment_bar.dart';
 
 class ProductCard extends StatelessWidget {
+  final Product product;
+  final VoidCallback? onBuy;
+  final VoidCallback? onFavorite;
+
   const ProductCard({
     super.key,
-    required this.name,
-    required this.artisanName,
-    required this.price,
-    this.imageUrl,
-    this.baseUrl,
-    this.assetCode = 'USD',
-    this.onTap,
+    required this.product,
+    this.onBuy,
+    this.onFavorite,
   });
-
-  final String name;
-  final String artisanName;
-  final int price;
-  final String? imageUrl;
-  final String? baseUrl;
-  final String assetCode;
-  final VoidCallback? onTap;
-
-  String? get _resolvedUrl {
-    if (imageUrl == null || imageUrl!.isEmpty) return null;
-    if (imageUrl!.startsWith('http://') || imageUrl!.startsWith('https://')) {
-      return imageUrl;
-    }
-    if (baseUrl != null && imageUrl!.startsWith('/')) {
-      return '$baseUrl$imageUrl';
-    }
-    return imageUrl;
-  }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final url = _resolvedUrl;
+    final tt = Theme.of(context).textTheme;
 
     return AppCard(
-      onTap: onTap,
+      onTap: onBuy,
       padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Image area
+          _imageSection(cs),
+          _contentSection(cs, tt),
+        ],
+      ),
+    );
+  }
+
+  Widget _imageSection(ColorScheme cs) {
+    return AspectRatio(
+      aspectRatio: 4 / 5,
+      child: Stack(
+        children: [
           Container(
-            height: 140,
             decoration: BoxDecoration(
               color: cs.surfaceContainerHighest,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             ),
-            child: url != null
+            child: product.imageUrl.isNotEmpty
                 ? ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                     child: Image.network(
-                      url,
+                      product.imageUrl,
                       fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      errorBuilder: (_, _, _) => _imagePlaceholder(cs),
+                      errorBuilder: (_, _, _) => _placeholder(cs),
                     ),
                   )
-                : _imagePlaceholder(cs),
+                : _placeholder(cs),
           ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: cs.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  artisanName,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _formatPrice(price, assetCode),
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: cs.primary,
-                    fontWeight: FontWeight.w600,
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Material(
+              color: Colors.white.withValues(alpha: 0.8),
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onFavorite,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    product.isFavorited ? Icons.favorite : Icons.favorite_outline,
+                    size: 20,
+                    color: product.isFavorited ? Colors.red : cs.onSurfaceVariant,
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ],
@@ -106,17 +82,67 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _imagePlaceholder(ColorScheme cs) {
-    return Center(
-      child: Icon(Icons.image_outlined, size: 48, color: cs.outline),
+  Widget _contentSection(ColorScheme cs, TextTheme tt) {
+    final price = product.basePrice / pow(10, product.assetScale);
+
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            product.name,
+            style: tt.titleMedium?.copyWith(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            product.artisanName,
+            style: tt.bodySmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${product.assetCode} ${price.toStringAsFixed(product.assetScale)}',
+            style: tt.titleMedium?.copyWith(
+                  color: cs.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          if (product.split != null) ...[
+            const SizedBox(height: 10),
+            SplitPaymentBar(split: product.split!),
+          ],
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: onBuy,
+              style: FilledButton.styleFrom(
+                backgroundColor: cs.primaryContainer,
+                foregroundColor: cs.onPrimaryContainer,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              child: const Text('Buy with Open Payments'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  String _formatPrice(int cents, String code) {
-    final dollars = cents / 100;
-    if (dollars == dollars.roundToDouble()) {
-      return '\$${dollars.toStringAsFixed(0)} $code';
-    }
-    return '\$${dollars.toStringAsFixed(2)} $code';
+  Widget _placeholder(ColorScheme cs) {
+    return Center(
+      child: Icon(Icons.image_outlined, size: 40, color: cs.outline),
+    );
   }
 }

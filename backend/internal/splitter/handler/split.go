@@ -164,18 +164,14 @@ func (h *SplitHandler) Callback(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
 	defer cancel()
 
-	accessToken, err := h.svc.HandleCallback(ctx, sessionID, interactRef, hash)
+	_, err := h.svc.HandleCallback(ctx, sessionID, interactRef, hash)
 	if err != nil {
-		h.log.Error("callback failed", "err", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.Redirect(http.StatusFound,
+			fmt.Sprintf("openpayments://payment/complete?session_id=%s&status=failed&error=%s", sessionID, err.Error()))
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status":       "authorized",
-		"access_token": accessToken.Value,
-		"manage_url":   accessToken.Manage,
-	})
+	c.Redirect(http.StatusFound,
+		fmt.Sprintf("openpayments://payment/complete?session_id=%s&status=completed", sessionID))
 }
 
 func (h *SplitHandler) SplitCallback(c *gin.Context) {
@@ -191,18 +187,17 @@ func (h *SplitHandler) SplitCallback(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
 
-	outgoings, err := h.svc.HandleSplitCallback(ctx, sessionID, interactRef, hash)
-	if err != nil {
-		h.log.Error("split callback failed", "err", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+	_, err := h.svc.HandleSplitCallback(ctx, sessionID, interactRef, hash)
 
 	hub.Broadcast(sessionID, []byte(`{"status":"completed"}`))
-	c.JSON(http.StatusOK, gin.H{
-		"status":            "completed",
-		"outgoing_payments": outgoings,
-	})
+
+	if err != nil {
+		c.Redirect(http.StatusFound,
+			fmt.Sprintf("openpayments://payment/complete?session_id=%s&status=failed&error=%s", sessionID, err.Error()))
+		return
+	}
+	c.Redirect(http.StatusFound,
+		fmt.Sprintf("openpayments://payment/complete?session_id=%s&status=completed", sessionID))
 }
 
 type CreateOutgoingPaymentRequest struct {
