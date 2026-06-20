@@ -38,6 +38,7 @@ func main() {
 	splitHandler := handler.NewSplitHandler(logger, paymentService)
 
 	router.GET("/health", healthHandler.Health)
+	router.GET("/ws/:session_id", handler.WSConnect)
 	router.GET("/split/callback", splitHandler.SplitCallback)
 
 	api := router.Group("/")
@@ -56,5 +57,3 @@ func main() {
 		logger.Fatal("server failed", "err", err)
 	}
 }
-
-

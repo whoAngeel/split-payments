@@ -11,7 +11,7 @@ func TestAuthService_Register(t *testing.T) {
 	db := setupTestDB(t)
 	svc := NewAuthService(db, "test-secret")
 
-	user, token, err := svc.Register("test@test.com", "password123", "Test User")
+	user, token, err := svc.Register("test@test.com", "password123", "Test User", "")
 	if err != nil {
 		t.Fatalf("register failed: %v", err)
 	}
@@ -31,12 +31,12 @@ func TestAuthService_RegisterDuplicate(t *testing.T) {
 	db := setupTestDB(t)
 	svc := NewAuthService(db, "test-secret")
 
-	_, _, err := svc.Register("dup@test.com", "password123", "Test")
+	_, _, err := svc.Register("dup@test.com", "password123", "Test", "")
 	if err != nil {
 		t.Fatalf("first register failed: %v", err)
 	}
 
-	_, _, err = svc.Register("dup@test.com", "password123", "Test")
+	_, _, err = svc.Register("dup@test.com", "password123", "Test", "")
 	if err == nil {
 		t.Fatal("expected duplicate error, got nil")
 	}
@@ -46,7 +46,7 @@ func TestAuthService_Login(t *testing.T) {
 	db := setupTestDB(t)
 	svc := NewAuthService(db, "test-secret")
 
-	_, _, err := svc.Register("login@test.com", "password123", "User")
+	_, _, err := svc.Register("login@test.com", "password123", "User", "")
 	if err != nil {
 		t.Fatalf("register failed: %v", err)
 	}
@@ -64,7 +64,7 @@ func TestAuthService_LoginWrongPassword(t *testing.T) {
 	db := setupTestDB(t)
 	svc := NewAuthService(db, "test-secret")
 
-	_, _, _ = svc.Register("wp@test.com", "correct", "User")
+	_, _, _ = svc.Register("wp@test.com", "correct", "User", "")
 
 	_, _, err := svc.Login("wp@test.com", "wrong")
 	if err == nil {
@@ -76,7 +76,7 @@ func TestAuthService_ValidateToken(t *testing.T) {
 	db := setupTestDB(t)
 	svc := NewAuthService(db, "test-secret")
 
-	_, token, _ := svc.Register("token@test.com", "password123", "User")
+	_, token, _ := svc.Register("token@test.com", "password123", "User", "")
 
 	userID, err := svc.ValidateToken(token)
 	if err != nil {
@@ -102,7 +102,7 @@ func TestAuthService_ValidateTokenWrongSecret(t *testing.T) {
 	svc1 := NewAuthService(db, "secret1")
 	svc2 := NewAuthService(db, "secret2")
 
-	_, token, _ := svc1.Register("secret@test.com", "password123", "User")
+	_, token, _ := svc1.Register("secret@test.com", "password123", "User", "")
 
 	_, err := svc2.ValidateToken(token)
 	if err == nil {
@@ -114,7 +114,7 @@ func TestAuthService_PasswordHashNotReturned(t *testing.T) {
 	db := setupTestDB(t)
 	svc := NewAuthService(db, "test-secret")
 
-	user, _, err := svc.Register("hash@test.com", "password123", "User")
+	user, _, err := svc.Register("hash@test.com", "password123", "User", "")
 	if err != nil {
 		t.Fatalf("register failed: %v", err)
 	}
@@ -134,7 +134,7 @@ func TestAuthService_PasswordIsHashed(t *testing.T) {
 	db := setupTestDB(t)
 	svc := NewAuthService(db, "test-secret")
 
-	_, _, _ = svc.Register("bcrypt@test.com", "password123", "User")
+	_, _, _ = svc.Register("bcrypt@test.com", "password123", "User", "")
 
 	var user model.User
 	db.Where("email = ?", "bcrypt@test.com").First(&user)

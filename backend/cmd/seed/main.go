@@ -52,7 +52,7 @@ func main() {
 		var u model.User
 		db.Where("email = ?", email).First(&u)
 		if u.ID == 0 {
-			newUser, _, err := authSvc.Register(email, password, name)
+			newUser, _, err := authSvc.Register(email, password, name, "")
 			if err != nil {
 				fmt.Printf("register %s: %v\n", email, err)
 				os.Exit(1)

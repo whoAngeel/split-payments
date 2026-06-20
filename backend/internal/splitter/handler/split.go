@@ -22,7 +22,7 @@ func NewSplitHandler(logger *log.Logger, svc *service.PaymentService) *SplitHand
 }
 
 type SplitRequest struct {
-	SenderWallet string         `json:"sender_wallet" binding:"required"`
+	SenderWallet string        `json:"sender_wallet" binding:"required"`
 	Shares       []model.Share `json:"shares" binding:"required,min=1"`
 }
 
@@ -198,6 +198,7 @@ func (h *SplitHandler) SplitCallback(c *gin.Context) {
 		return
 	}
 
+	hub.Broadcast(sessionID, []byte(`{"status":"completed"}`))
 	c.JSON(http.StatusOK, gin.H{
 		"status":            "completed",
 		"outgoing_payments": outgoings,

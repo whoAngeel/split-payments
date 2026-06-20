@@ -16,9 +16,10 @@ func NewAuthHandler(svc *service.AuthService) *AuthHandler {
 }
 
 type registerRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8"`
-	Name     string `json:"name" binding:"required"`
+	Email            string `json:"email" binding:"required,email"`
+	Password         string `json:"password" binding:"required,min=8"`
+	Name             string `json:"name" binding:"required"`
+	WalletAddressURL string `json:"wallet_address_url"`
 }
 
 type loginRequest struct {
@@ -33,7 +34,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user, token, err := h.svc.Register(req.Email, req.Password, req.Name)
+	user, token, err := h.svc.Register(req.Email, req.Password, req.Name, req.WalletAddressURL)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return

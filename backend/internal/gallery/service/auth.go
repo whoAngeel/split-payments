@@ -19,16 +19,17 @@ func NewAuthService(db *gorm.DB, secret string) *AuthService {
 	return &AuthService{db: db, secret: []byte(secret)}
 }
 
-func (s *AuthService) Register(email, password, name string) (*model.User, string, error) {
+func (s *AuthService) Register(email, password, name, walletAddressURL string) (*model.User, string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, "", fmt.Errorf("hashing password: %w", err)
 	}
 
 	user := model.User{
-		Email:        email,
-		PasswordHash: string(hash),
-		Name:         name,
+		Email:            email,
+		PasswordHash:     string(hash),
+		Name:             name,
+		WalletAddressURL: walletAddressURL,
 	}
 
 	if err := s.db.Create(&user).Error; err != nil {
