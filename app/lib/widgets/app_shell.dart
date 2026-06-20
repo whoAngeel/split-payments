@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 class AppShell extends StatelessWidget {
@@ -10,55 +11,44 @@ class AppShell extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final location = GoRouterState.of(context).uri.toString();
 
-    return Scaffold(
+    final isRoot = location.startsWith('/explorar');
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (isRoot) {
+          SystemNavigator.pop();
+        } else {
+          context.go('/explorar');
+        }
+      },
+      child: Scaffold(
       backgroundColor: cs.surface,
-      appBar: AppBar(
-        title: Text(_titleFor(location)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_outlined),
-            onPressed: () => context.go('/account'),
-            tooltip: 'Cuenta',
-          ),
-        ],
-      ),
-      body: child,
+      body: SafeArea(child: child),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _indexFor(location),
         onDestinationSelected: (l) => context.go(_routes[l]),
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.store_outlined),
-            selectedIcon: Icon(Icons.store),
-            label: 'Productos',
+            icon: Icon(Icons.explore_outlined),
+            selectedIcon: Icon(Icons.explore),
+            label: 'Explorar',
           ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long),
             label: 'Historial',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outlined),
-            selectedIcon: Icon(Icons.person),
-            label: 'Cuenta',
-          ),
         ],
       ),
-    );
+    ));
+
   }
 }
 
-const _routes = ['/explorar', '/orders', '/account'];
+const _routes = ['/explorar', '/orders'];
 
 int _indexFor(String location) {
   if (location.startsWith('/orders')) return 1;
-  if (location.startsWith('/account')) return 2;
   return 0;
-}
-
-String _titleFor(String location) {
-  if (location.startsWith('/explorar')) return 'Explorar';
-  if (location.startsWith('/orders')) return 'Historial';
-  if (location.startsWith('/account')) return 'Cuenta';
-  return 'Gallery';
 }
