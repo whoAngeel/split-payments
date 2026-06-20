@@ -8,7 +8,7 @@ class AppErrorState extends StatelessWidget {
     super.key,
     required this.message,
     this.onRetry,
-    this.retryLabel = 'Reintentar',
+    this.retryLabel = 'Retry',
   });
 
   final String message;
@@ -31,7 +31,7 @@ class AppErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Algo salió mal',
+              'Something went wrong',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: cs.onSurface,
                     fontWeight: FontWeight.w600,

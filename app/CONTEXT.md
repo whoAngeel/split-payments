@@ -18,15 +18,28 @@ _Avoid_: Auth flow, login redirect
 The final screen shown after the Splitter completes all outgoing payments. Received via WebSocket or push notification.
 _Avoid_: Success screen, receipt
 
-### Gallery Operator Flow
+### Roles
+
+**Buyer**:
+A user who explores and purchases products. Sees the Explore and Order History tabs. Registers from the app.
+_Avoid_: Customer, user
+
+**Gallery Admin**:
+A user who owns a gallery. Sees the admin shell with Dashboard, Artisans, Products, and Settings tabs. Created via backend endpoints, not from the app registration flow.
+
+### Admin Shell Tabs
 
 **Dashboard**:
-The gallery operator's home view showing key metrics: active artisans, pending settlements, recent split payments.
+The gallery admin's home view showing key metrics: active artisans, product count, commission rate, recent split payments.
 _Avoid_: Home, landing
 
-**Artisan Registry**:
-The list of artisans registered with the gallery, each with their wallet address and base price for products.
-_Avoid_: Seller list, merchant list
+**Artisan Directory**:
+The list of artisans belonging to the gallery. Supports create, edit, delete, and toggle active status. Tapping an artisan shows their products.
+_Avoid_: Seller list, merchant list, artisan registry
+
+**Product Directory**:
+A flat list of all products in the gallery, regardless of artisan. Supports toggle active status and navigation to product detail. Products can also be managed from within an artisan's detail view.
+_Avoid_: Catalog, inventory
 
 **Commission Settings**:
 The gallery's commission rate configuration, applied to all artisan base prices in that gallery.
