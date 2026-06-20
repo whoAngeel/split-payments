@@ -37,6 +37,7 @@ func main() {
 		&model.Artisan{},
 		&model.Product{},
 		&model.Commission{},
+		&model.Favorite{},
 	); err != nil {
 		fmt.Println("migration:", err)
 		os.Exit(1)

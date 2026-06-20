@@ -52,3 +52,51 @@ func (s *ProductService) Delete(productID uint) error {
 	}
 	return nil
 }
+
+type ProductSplit struct {
+	ArtisanPercent  int `json:"artisan_percent"`
+	GalleryPercent  int `json:"gallery_percent"`
+	PlatformPercent int `json:"platform_percent"`
+}
+
+type ExploreProduct struct {
+	ID          uint          `json:"id"`
+	Name        string        `json:"name"`
+	BasePrice   int64         `json:"base_price"`
+	AssetCode   string        `json:"asset_code"`
+	AssetScale  int           `json:"asset_scale"`
+	ArtisanName string        `json:"artisan_name"`
+	ImageURL    string        `json:"image_url"`
+	Split       *ProductSplit `json:"split"`
+}
+
+func (s *ProductService) ListAllExplore() ([]ExploreProduct, error) {
+	var products []model.Product
+	if err := s.db.Preload("Artisan.Galleries.Commission").Order("created_at DESC").Find(&products).Error; err != nil {
+		return nil, fmt.Errorf("listing products: %w", err)
+	}
+
+	result := make([]ExploreProduct, len(products))
+	for i, p := range products {
+		ep := ExploreProduct{
+			ID:          p.ID,
+			Name:        p.Name,
+			BasePrice:   p.BasePrice,
+			AssetCode:   p.AssetCode,
+			AssetScale:  p.AssetScale,
+			ArtisanName: p.Artisan.Name,
+			ImageURL:    p.ImageURL,
+		}
+		if len(p.Artisan.Galleries) > 0 && p.Artisan.Galleries[0].Commission != nil {
+			rate := p.Artisan.Galleries[0].Commission.Rate
+			galleryPct := rate / 100
+			ep.Split = &ProductSplit{
+				ArtisanPercent:  100 - galleryPct,
+				GalleryPercent:  galleryPct,
+				PlatformPercent: 0,
+			}
+		}
+		result[i] = ep
+	}
+	return result, nil
+}

@@ -9,15 +9,28 @@ import (
 )
 
 type ProductHandler struct {
-	svc *service.ProductService
+	svc    *service.ProductService
+	favSvc *service.FavoriteService
 }
 
-func NewProductHandler(svc *service.ProductService) *ProductHandler {
-	return &ProductHandler{svc: svc}
+func NewProductHandler(svc *service.ProductService, favSvc *service.FavoriteService) *ProductHandler {
+	return &ProductHandler{svc: svc, favSvc: favSvc}
+}
+
+type exploreProductResponse struct {
+	ID          uint                 `json:"id"`
+	Name        string               `json:"name"`
+	BasePrice   int64                `json:"base_price"`
+	AssetCode   string               `json:"asset_code"`
+	AssetScale  int                  `json:"asset_scale"`
+	ArtisanName string               `json:"artisan_name"`
+	ImageURL    string               `json:"image_url"`
+	Split       *service.ProductSplit `json:"split"`
+	IsFavorited bool                 `json:"is_favorited"`
 }
 
 func (h *ProductHandler) Explore(c *gin.Context) {
-	products, err := h.svc.ListAll()
+	products, err := h.svc.ListAllExplore()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -25,34 +38,28 @@ func (h *ProductHandler) Explore(c *gin.Context) {
 
 	userID, authenticated := c.Get("userID")
 
-	if !authenticated {
-		type publicProduct struct {
-			ID          uint   `json:"id"`
-			Name        string `json:"name"`
-			BasePrice   int64  `json:"base_price"`
-			AssetCode   string `json:"asset_code"`
-			AssetScale  int    `json:"asset_scale"`
-			ArtisanName string `json:"artisan_name"`
-			ImageURL    string `json:"image_url"`
-		}
-		var result []publicProduct
-		for _, p := range products {
-			result = append(result, publicProduct{
-				ID:          p.ID,
-				Name:        p.Name,
-				BasePrice:   p.BasePrice,
-				AssetCode:   p.AssetCode,
-				AssetScale:  p.AssetScale,
-				ArtisanName: p.Artisan.Name,
-				ImageURL:    p.ImageURL,
-			})
-		}
-		c.JSON(http.StatusOK, result)
-		return
+	var favIDs map[uint]bool
+	if authenticated {
+		favIDs, _ = h.favSvc.GetFavoritedProductIDs(userID.(uint))
 	}
 
-	_ = userID
-	c.JSON(http.StatusOK, products)
+	result := make([]exploreProductResponse, len(products))
+	for i, p := range products {
+		r := exploreProductResponse{
+			ID:          p.ID,
+			Name:        p.Name,
+			BasePrice:   p.BasePrice,
+			AssetCode:   p.AssetCode,
+			AssetScale:  p.AssetScale,
+			ArtisanName: p.ArtisanName,
+			ImageURL:    p.ImageURL,
+			Split:       p.Split,
+			IsFavorited: favIDs[p.ID],
+		}
+		result[i] = r
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 type createProductRequest struct {

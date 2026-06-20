@@ -40,6 +40,7 @@ func main() {
 		&model.Artisan{},
 		&model.Product{},
 		&model.Commission{},
+		&model.Favorite{},
 	); err != nil {
 		logger.Fatal("migration", "err", err)
 	}
@@ -50,12 +51,14 @@ func main() {
 	gallerySvc := service.NewGalleryService(db)
 	artisanSvc := service.NewArtisanService(db)
 	productSvc := service.NewProductService(db)
+	favoriteSvc := service.NewFavoriteService(db)
 	checkoutSvc := service.NewCheckoutService(db, cfg.SplitterURL, cfg.SplitterAPIKey)
 
 	authHandler := handler.NewAuthHandler(authSvc)
 	galleryHandler := handler.NewGalleryHandler(gallerySvc)
 	artisanHandler := handler.NewArtisanHandler(artisanSvc)
-	productHandler := handler.NewProductHandler(productSvc)
+	productHandler := handler.NewProductHandler(productSvc, favoriteSvc)
+	favoriteHandler := handler.NewFavoriteHandler(favoriteSvc)
 	checkoutHandler := handler.NewCheckoutHandler(checkoutSvc)
 
 	router := gin.New()
@@ -86,6 +89,8 @@ func main() {
 		protected.POST("/artisans/:id/products", productHandler.Create)
 		protected.GET("/artisans/:id/products", productHandler.ListByArtisan)
 		protected.DELETE("/products/:id", productHandler.Delete)
+		protected.POST("/favorites/:product_id", favoriteHandler.Toggle)
+		protected.GET("/favorites", favoriteHandler.List)
 		protected.POST("/checkout", checkoutHandler.Checkout)
 	}
 
