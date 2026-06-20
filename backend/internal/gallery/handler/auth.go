@@ -64,3 +64,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		"token": token,
 	})
 }
+
+func (h *AuthHandler) Me(c *gin.Context) {
+	userID := c.GetUint("userID")
+	user, err := h.svc.GetUser(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	c.JSON(http.StatusOK, user)
+}

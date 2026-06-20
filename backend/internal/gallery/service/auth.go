@@ -44,6 +44,14 @@ func (s *AuthService) Register(email, password, name, walletAddressURL string) (
 	return &user, token, nil
 }
 
+func (s *AuthService) GetUser(id uint) (*model.User, error) {
+	var user model.User
+	if err := s.db.First(&user, id).Error; err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+	return &user, nil
+}
+
 func (s *AuthService) Login(email, password string) (*model.User, string, error) {
 	var user model.User
 	if err := s.db.Where("email = ?", email).First(&user).Error; err != nil {

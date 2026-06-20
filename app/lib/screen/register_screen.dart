@@ -8,38 +8,61 @@ import '../widgets/app_text_field.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_icon_box.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _LoginScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
+  final _walletController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirm = true;
   String? _validationError;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmController.dispose();
+    _walletController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _register() async {
+    final name = _nameController.text.trim();
     final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
+    final password = _passwordController.text;
+    final confirm = _confirmController.text;
 
-    if (email.isEmpty || password.isEmpty) {
+    if (name.isEmpty || email.isEmpty || password.isEmpty || confirm.isEmpty) {
       setState(() => _validationError = 'Completa todos los campos');
+      return;
+    }
+    if (password.length < 8) {
+      setState(() => _validationError = 'La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+    if (password != confirm) {
+      setState(() => _validationError = 'Las contraseñas no coinciden');
       return;
     }
 
     setState(() => _validationError = null);
 
-    await ref.read(authProvider.notifier).login(email, password);
+    final wallet = _walletController.text.trim();
+    await ref.read(authProvider.notifier).register(
+      email,
+      password,
+      name,
+      walletAddress: wallet.isEmpty ? null : wallet,
+    );
 
     if (!mounted) return;
 
@@ -51,8 +74,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   String _friendlyError(Object? error) {
     final msg = error.toString().toLowerCase();
-    if (msg.contains('401') || msg.contains('invalid') || msg.contains('password')) {
-      return 'Correo o contraseña incorrectos';
+    if (msg.contains('409') || msg.contains('conflict') || msg.contains('already')) {
+      return 'Este correo ya está registrado';
     }
     if (msg.contains('timeout') || msg.contains('timed out')) {
       return 'El servidor tardó demasiado. Intenta de nuevo';
@@ -79,14 +102,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AppIconBox(
-                  icon: Icons.handshake_outlined,
-                  size: 72,
-                  radius: 20,
-                ),
+                AppIconBox(icon: Icons.handshake_outlined, size: 72, radius: 20),
                 const SizedBox(height: 24),
                 Text(
-                  'Open Artisan',
+                  'Crear cuenta',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: cs.onSurface,
                     fontWeight: FontWeight.w600,
@@ -94,12 +113,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  authState.isLoading ? 'Ingresando...' : 'Ingresa para continuar',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
+                  authState.isLoading ? 'Creando cuenta...' : 'Únete a Open Artisan',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 40),
+                AppTextField(
+                  label: 'Nombre',
+                  hint: 'Tu nombre completo',
+                  controller: _nameController,
+                  textInputAction: TextInputAction.next,
+                  prefixIcon: const Icon(Icons.person_outlined),
+                  enabled: !authState.isLoading,
+                ),
+                const SizedBox(height: 16),
                 AppTextField(
                   label: 'Correo electrónico',
                   hint: 'usuario@gmail.com',
@@ -112,10 +140,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 16),
                 AppTextField(
                   label: 'Contraseña',
-                  hint: 'Escribe tu contraseña',
+                  hint: 'Mínimo 8 caracteres',
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  textInputAction: TextInputAction.done,
+                  textInputAction: TextInputAction.next,
                   prefixIcon: const Icon(Icons.lock_outlined),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -124,6 +152,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           : Icons.visibility_off_outlined,
                     ),
                     onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                  enabled: !authState.isLoading,
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  label: 'Wallet (opcional)',
+                  hint: r'$wallet.example.com/usuario  o  https://...',
+                  controller: _walletController,
+                  keyboardType: TextInputType.url,
+                  textInputAction: TextInputAction.next,
+                  prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
+                  enabled: !authState.isLoading,
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  label: 'Confirmar contraseña',
+                  hint: 'Repite tu contraseña',
+                  controller: _confirmController,
+                  obscureText: _obscureConfirm,
+                  textInputAction: TextInputAction.done,
+                  prefixIcon: const Icon(Icons.lock_outlined),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirm
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                    onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                   ),
                   enabled: !authState.isLoading,
                 ),
@@ -153,23 +209,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ],
                 const SizedBox(height: 24),
                 AppButton(
-                  label: 'Ingresar',
+                  label: 'Crear cuenta',
                   fullWidth: true,
-                  onPressed: authState.isLoading ? null : _login,
+                  onPressed: authState.isLoading ? null : _register,
                 ),
                 const SizedBox(height: 16),
-                if (authState.isLoading)
-                  AppButton(
-                    label: 'Cancelar',
-                    variant: AppButtonVariant.text,
-                    onPressed: () => ref.read(authProvider.notifier).cancelLogin(),
-                  )
-                else
-                  AppButton(
-                    label: 'Crear cuenta',
-                    variant: AppButtonVariant.text,
-                    onPressed: () => context.go('/register'),
-                  ),
+                AppButton(
+                  label: 'Ya tengo cuenta',
+                  variant: AppButtonVariant.text,
+                  onPressed: authState.isLoading ? null : () => context.go('/login'),
+                ),
               ],
             ),
           ),

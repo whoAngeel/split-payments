@@ -34,21 +34,21 @@ class ApiClient {
     if (_token != null) 'Authorization': 'Bearer $_token',
   };
 
+  static const _timeout = Duration(seconds: 15);
+
   Future<dynamic> get(String path) async {
     final uri = Uri.parse('$baseURL$path');
     _logger?.d('GET $uri');
-    final response = await _client.get(uri, headers: _headers);
+    final response = await _client.get(uri, headers: _headers).timeout(_timeout);
     return _handle(response);
   }
 
   Future<dynamic> post(String path, {Map<String, dynamic>? body}) async {
     final uri = Uri.parse('$baseURL$path');
     _logger?.d('POST $uri');
-    final response = await _client.post(
-      uri,
-      headers: _headers,
-      body: body != null ? jsonEncode(body) : null,
-    );
+    final response = await _client
+        .post(uri, headers: _headers, body: body != null ? jsonEncode(body) : null)
+        .timeout(_timeout);
     return _handle(response);
   }
 

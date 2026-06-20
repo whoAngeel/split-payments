@@ -77,6 +77,7 @@ func main() {
 	protected := router.Group("/api")
 	protected.Use(middleware.AuthRequired(authSvc))
 	{
+		protected.GET("/auth/me", authHandler.Me)
 		protected.POST("/galleries", galleryHandler.Create)
 		protected.GET("/galleries", galleryHandler.List)
 		protected.PUT("/galleries/:id/commission", galleryHandler.SetCommission)

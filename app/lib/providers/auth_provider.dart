@@ -18,7 +18,15 @@ class AuthNotifier extends AsyncNotifier<Session?> {
 
     final api = ref.read(apiClientProvider);
     api.token = token;
-    return null; // no se persiste el user, solo el token
+
+    try {
+      final user = await ref.read(authServiceProvider).me();
+      return Session(token: token, user: user);
+    } catch (_) {
+      await storage.delete(key: 'token');
+      api.token = null;
+      return null;
+    }
   }
 
   Future<void> login(String email, String password) async {
@@ -39,6 +47,26 @@ class AuthNotifier extends AsyncNotifier<Session?> {
       ref
           .read(loggerProvider)
           .e('Login failed', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  void cancelLogin() {
+    state = const AsyncData(null);
+  }
+
+  Future<void> register(String email, String password, String name, {String? walletAddress}) async {
+    final service = ref.read(authServiceProvider);
+    final api = ref.read(apiClientProvider);
+
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final session = await service.register(email, password, name, walletAddress: walletAddress);
+      api.token = session.token;
+      await const FlutterSecureStorage().write(key: 'token', value: session.token);
+      return session;
+    });
+    if (state case AsyncError(:final error, :final stackTrace)) {
+      ref.read(loggerProvider).e('Register failed', error: error, stackTrace: stackTrace);
     }
   }
 
