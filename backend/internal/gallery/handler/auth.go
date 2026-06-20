@@ -20,6 +20,9 @@ type registerRequest struct {
 	Password         string `json:"password" binding:"required,min=8"`
 	Name             string `json:"name" binding:"required"`
 	WalletAddressURL string `json:"wallet_address_url"`
+	Role             string `json:"role"`
+	GalleryName      string `json:"gallery_name"`
+	InviteCode       string `json:"invite_code"`
 }
 
 type loginRequest struct {
@@ -34,15 +37,18 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user, token, err := h.svc.Register(req.Email, req.Password, req.Name, req.WalletAddressURL)
+	user, token, err := h.svc.Register(req.Email, req.Password, req.Name, req.WalletAddressURL, req.Role, req.GalleryName, req.InviteCode)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
 	}
 
+	_, _, galleryID, _ := h.svc.ValidateToken(token)
+
 	c.JSON(http.StatusCreated, gin.H{
-		"user":  user,
-		"token": token,
+		"user":       user,
+		"token":      token,
+		"gallery_id": galleryID,
 	})
 }
 
@@ -59,18 +65,26 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	_, _, galleryID, _ := h.svc.ValidateToken(token)
+
 	c.JSON(http.StatusOK, gin.H{
-		"user":  user,
-		"token": token,
+		"user":       user,
+		"token":      token,
+		"gallery_id": galleryID,
 	})
 }
 
 func (h *AuthHandler) Me(c *gin.Context) {
 	userID := c.GetUint("userID")
+	galleryID := c.GetUint("galleryID")
+
 	user, err := h.svc.GetUser(userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, gin.H{
+		"user":       user,
+		"gallery_id": galleryID,
+	})
 }

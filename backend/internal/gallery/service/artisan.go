@@ -41,3 +41,65 @@ func (s *ArtisanService) List() ([]model.Artisan, error) {
 	}
 	return artisans, nil
 }
+
+func (s *ArtisanService) ListByGallery(galleryID uint) ([]model.Artisan, error) {
+	var artisans []model.Artisan
+	if err := s.db.
+		Joins("JOIN gallery_artisans ON gallery_artisans.artisan_id = artisans.id").
+		Where("gallery_artisans.gallery_id = ?", galleryID).
+		Find(&artisans).Error; err != nil {
+		return nil, fmt.Errorf("listing gallery artisans: %w", err)
+	}
+	return artisans, nil
+}
+
+func (s *ArtisanService) Update(id uint, name, walletAddressURL, imageURL, bio string) (*model.Artisan, error) {
+	var artisan model.Artisan
+	if err := s.db.First(&artisan, id).Error; err != nil {
+		return nil, fmt.Errorf("artisan not found")
+	}
+
+	if name != "" {
+		artisan.Name = name
+	}
+	artisan.WalletAddressURL = walletAddressURL
+	artisan.ImageURL = imageURL
+	artisan.Bio = bio
+
+	if err := s.db.Save(&artisan).Error; err != nil {
+		return nil, fmt.Errorf("updating artisan: %w", err)
+	}
+	return &artisan, nil
+}
+
+func (s *ArtisanService) Delete(id uint) error {
+	var count int64
+	if err := s.db.Model(&model.Product{}).Where("artisan_id = ?", id).Count(&count).Error; err != nil {
+		return fmt.Errorf("checking products: %w", err)
+	}
+	if count > 0 {
+		return fmt.Errorf("cannot delete artisan with existing products")
+	}
+	if err := s.db.Delete(&model.Artisan{}, id).Error; err != nil {
+		return fmt.Errorf("deleting artisan: %w", err)
+	}
+	return nil
+}
+
+func (s *ArtisanService) ToggleActive(id uint, cascade bool) (*model.Artisan, error) {
+	var artisan model.Artisan
+	if err := s.db.First(&artisan, id).Error; err != nil {
+		return nil, fmt.Errorf("artisan not found")
+	}
+
+	artisan.IsActive = !artisan.IsActive
+	if err := s.db.Save(&artisan).Error; err != nil {
+		return nil, fmt.Errorf("toggling artisan: %w", err)
+	}
+
+	if cascade {
+		s.db.Model(&model.Product{}).Where("artisan_id = ?", id).Update("is_active", artisan.IsActive)
+	}
+
+	return &artisan, nil
+}

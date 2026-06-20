@@ -11,6 +11,7 @@ type Config struct {
 	JWTSecret      string
 	SplitterURL    string
 	SplitterAPIKey string
+	InviteCode     string
 }
 
 func Load() *Config {
@@ -21,5 +22,6 @@ func Load() *Config {
 		JWTSecret:      os.Getenv("JWT_SECRET"),
 		SplitterURL:    os.Getenv("SPLITTER_URL"),
 		SplitterAPIKey: os.Getenv("SPLITTER_API_KEY"),
+		InviteCode:     os.Getenv("INVITE_CODE"),
 	}
 }

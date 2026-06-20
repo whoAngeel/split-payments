@@ -16,6 +16,22 @@ func NewGalleryService(db *gorm.DB) *GalleryService {
 }
 
 func (s *GalleryService) CreateGallery(userID uint, name string) (*model.Gallery, error) {
+	var user model.User
+	if err := s.db.First(&user, userID).Error; err != nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	if user.Role != "gallery_admin" {
+		return nil, fmt.Errorf("only gallery admins can create galleries")
+	}
+
+	var count int64
+	if err := s.db.Model(&model.Gallery{}).Where("user_id = ?", userID).Count(&count).Error; err != nil {
+		return nil, fmt.Errorf("checking existing galleries: %w", err)
+	}
+	if count > 0 {
+		return nil, fmt.Errorf("user already has a gallery")
+	}
+
 	gallery := model.Gallery{UserID: userID, Name: name}
 	if err := s.db.Create(&gallery).Error; err != nil {
 		return nil, fmt.Errorf("creating gallery: %w", err)
@@ -69,6 +85,48 @@ func (s *GalleryService) AddArtisan(galleryID, userID, artisanID uint) error {
 		return fmt.Errorf("artisan not found")
 	}
 	return s.db.Model(&gallery).Association("Artisans").Append(&artisan)
+}
+
+type GalleryDashboard struct {
+	Gallery         model.Gallery `json:"gallery"`
+	ActiveArtisans  int64         `json:"active_artisans"`
+	TotalArtisans   int64         `json:"total_artisans"`
+	ActiveProducts  int64         `json:"active_products"`
+	TotalProducts   int64         `json:"total_products"`
+	CommissionRate  int           `json:"commission_rate"`
+}
+
+func (s *GalleryService) GetDashboard(galleryID, userID uint) (*GalleryDashboard, error) {
+	gallery, err := s.GetGallery(galleryID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	dashboard := &GalleryDashboard{
+		Gallery:        *gallery,
+		TotalArtisans:  int64(len(gallery.Artisans)),
+	}
+
+	if gallery.Commission != nil {
+		dashboard.CommissionRate = gallery.Commission.Rate
+	}
+
+	s.db.Model(&model.Artisan{}).
+		Joins("JOIN gallery_artisans ON gallery_artisans.artisan_id = artisans.id").
+		Where("gallery_artisans.gallery_id = ? AND artisans.is_active = ?", galleryID, true).
+		Count(&dashboard.ActiveArtisans)
+
+	s.db.Model(&model.Product{}).
+		Joins("JOIN gallery_artisans ON gallery_artisans.artisan_id = products.artisan_id").
+		Where("gallery_artisans.gallery_id = ?", galleryID).
+		Count(&dashboard.TotalProducts)
+
+	s.db.Model(&model.Product{}).
+		Joins("JOIN gallery_artisans ON gallery_artisans.artisan_id = products.artisan_id").
+		Where("gallery_artisans.gallery_id = ? AND products.is_active = ?", galleryID, true).
+		Count(&dashboard.ActiveProducts)
+
+	return dashboard, nil
 }
 
 func (s *GalleryService) RemoveArtisan(galleryID, userID, artisanID uint) error {

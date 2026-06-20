@@ -18,15 +18,15 @@ func NewProductHandler(svc *service.ProductService, favSvc *service.FavoriteServ
 }
 
 type exploreProductResponse struct {
-	ID          uint                 `json:"id"`
-	Name        string               `json:"name"`
-	BasePrice   int64                `json:"base_price"`
-	AssetCode   string               `json:"asset_code"`
-	AssetScale  int                  `json:"asset_scale"`
-	ArtisanName string               `json:"artisan_name"`
-	ImageURL    string               `json:"image_url"`
+	ID          uint                  `json:"id"`
+	Name        string                `json:"name"`
+	BasePrice   int64                 `json:"base_price"`
+	AssetCode   string                `json:"asset_code"`
+	AssetScale  int                   `json:"asset_scale"`
+	ArtisanName string                `json:"artisan_name"`
+	ImageURL    string                `json:"image_url"`
 	Split       *service.ProductSplit `json:"split"`
-	IsFavorited bool                 `json:"is_favorited"`
+	IsFavorited bool                  `json:"is_favorited"`
 }
 
 func (h *ProductHandler) Explore(c *gin.Context) {
@@ -43,8 +43,8 @@ func (h *ProductHandler) Explore(c *gin.Context) {
 		favIDs, _ = h.favSvc.GetFavoritedProductIDs(userID.(uint))
 	}
 
-	result := make([]exploreProductResponse, len(products))
-	for i, p := range products {
+	result := make([]exploreProductResponse, 0, len(products))
+	for _, p := range products {
 		r := exploreProductResponse{
 			ID:          p.ID,
 			Name:        p.Name,
@@ -56,7 +56,7 @@ func (h *ProductHandler) Explore(c *gin.Context) {
 			Split:       p.Split,
 			IsFavorited: favIDs[p.ID],
 		}
-		result[i] = r
+		result = append(result, r)
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -73,7 +73,7 @@ type createProductRequest struct {
 func (h *ProductHandler) Create(c *gin.Context) {
 	artisanID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid artisan_id"})
 		return
 	}
 
@@ -108,6 +108,18 @@ func (h *ProductHandler) ListByArtisan(c *gin.Context) {
 	c.JSON(http.StatusOK, products)
 }
 
+func (h *ProductHandler) ListByGallery(c *gin.Context) {
+	galleryID := c.GetUint("galleryID")
+
+	products, err := h.svc.ListByGallery(galleryID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, products)
+}
+
 func (h *ProductHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
@@ -121,4 +133,62 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+}
+
+type updateProductRequest struct {
+	Name      string `json:"name"`
+	BasePrice int64  `json:"base_price"`
+	ImageURL  string `json:"image_url"`
+}
+
+func (h *ProductHandler) Update(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	var req updateProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	product, err := h.svc.Update(uint(id), req.Name, req.ImageURL, req.BasePrice)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, product)
+}
+
+func (h *ProductHandler) GetDetail(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+	detail, err := h.svc.GetDetail(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, detail)
+}
+
+func (h *ProductHandler) ToggleActive(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	product, err := h.svc.ToggleActive(uint(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, product)
 }

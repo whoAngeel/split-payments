@@ -16,9 +16,11 @@ func OptionalAuth(svc *service.AuthService) gin.HandlerFunc {
 		}
 
 		token := strings.TrimPrefix(header, "Bearer ")
-		userID, err := svc.ValidateToken(token)
+		userID, role, galleryID, err := svc.ValidateToken(token)
 		if err == nil {
 			c.Set("userID", userID)
+			c.Set("role", role)
+			c.Set("galleryID", galleryID)
 		}
 		c.Next()
 	}

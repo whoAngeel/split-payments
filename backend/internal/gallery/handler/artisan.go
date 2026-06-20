@@ -9,19 +9,24 @@ import (
 )
 
 type ArtisanHandler struct {
-	svc *service.ArtisanService
+	svc     *service.ArtisanService
+	gallerySvc *service.GalleryService
 }
 
-func NewArtisanHandler(svc *service.ArtisanService) *ArtisanHandler {
-	return &ArtisanHandler{svc: svc}
+func NewArtisanHandler(svc *service.ArtisanService, gallerySvc *service.GalleryService) *ArtisanHandler {
+	return &ArtisanHandler{svc: svc, gallerySvc: gallerySvc}
 }
 
 type createArtisanRequest struct {
 	Name             string `json:"name" binding:"required"`
 	WalletAddressURL string `json:"wallet_address_url" binding:"required"`
+	ImageURL         string `json:"image_url"`
+	Bio              string `json:"bio"`
 }
 
 func (h *ArtisanHandler) Create(c *gin.Context) {
+	galleryID := c.GetUint("galleryID")
+
 	var req createArtisanRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -34,11 +39,18 @@ func (h *ArtisanHandler) Create(c *gin.Context) {
 		return
 	}
 
+	if err := h.gallerySvc.AddArtisan(galleryID, c.GetUint("userID"), artisan.ID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusCreated, artisan)
 }
 
 func (h *ArtisanHandler) List(c *gin.Context) {
-	artisans, err := h.svc.List()
+	galleryID := c.GetUint("galleryID")
+
+	artisans, err := h.svc.ListByGallery(galleryID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -56,6 +68,89 @@ func (h *ArtisanHandler) Get(c *gin.Context) {
 	artisan, err := h.svc.Get(uint(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "artisan not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, artisan)
+}
+
+type updateArtisanRequest struct {
+	Name             string `json:"name"`
+	WalletAddressURL string `json:"wallet_address_url"`
+	ImageURL         string `json:"image_url"`
+	Bio              string `json:"bio"`
+}
+
+func (h *ArtisanHandler) Update(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	var req updateArtisanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	artisan, err := h.svc.Update(uint(id), req.Name, req.WalletAddressURL, req.ImageURL, req.Bio)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, artisan)
+}
+
+func (h *ArtisanHandler) Delete(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	if err := h.svc.Delete(uint(id)); err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+}
+
+func (h *ArtisanHandler) GetPublic(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	artisan, err := h.svc.Get(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "artisan not found"})
+		return
+	}
+
+	if !artisan.IsActive {
+		c.JSON(http.StatusNotFound, gin.H{"error": "artisan not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, artisan)
+}
+
+func (h *ArtisanHandler) ToggleActive(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	cascade := c.Query("cascade") == "true"
+
+	artisan, err := h.svc.ToggleActive(uint(id), cascade)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

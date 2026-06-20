@@ -43,16 +43,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	authSvc := service.NewAuthService(db, "dev-secret-change-in-production")
+	authSvc := service.NewAuthService(db, "dev-secret-change-in-production", "")
 	gallerySvc := service.NewGalleryService(db)
 	artisanSvc := service.NewArtisanService(db)
 	productSvc := service.NewProductService(db)
 
-	seedUser := func(email, password, name, wallet string) model.User {
+	seedUser := func(email, password, name, role, wallet string) model.User {
 		var u model.User
 		db.Where("email = ?", email).First(&u)
 		if u.ID == 0 {
-			newUser, _, err := authSvc.Register(email, password, name, "")
+			newUser, _, err := authSvc.Register(email, password, name, "", role, "", "")
 			if err != nil {
 				fmt.Printf("register %s: %v\n", email, err)
 				os.Exit(1)
@@ -66,8 +66,8 @@ func main() {
 		return u
 	}
 
-	galleryOwner := seedUser("gallery@art.com", "password123", "Gallery Owner", "https://ilp.interledger-test.dev/angeel")
-	seedUser("buyer@test.com", "password123", "Carlos Comprador", "https://ilp.interledger-test.dev/angeel")
+	galleryOwner := seedUser("gallery@art.com", "password123", "Gallery Owner", "gallery_admin", "https://ilp.interledger-test.dev/angeel")
+	seedUser("buyer@test.com", "password123", "Carlos Comprador", "buyer", "https://ilp.interledger-test.dev/angeel")
 	fmt.Println()
 
 	var count int64
