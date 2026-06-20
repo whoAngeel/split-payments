@@ -2,13 +2,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openpayments_app/providers/auth_provider.dart';
 import 'package:openpayments_app/screen/account_screen.dart';
+import 'package:openpayments_app/screen/admin_artisans_screen.dart';
+import 'package:openpayments_app/screen/admin_dashboard_screen.dart';
+import 'package:openpayments_app/screen/admin_products_screen.dart';
+import 'package:openpayments_app/screen/admin_settings_screen.dart';
 import 'package:openpayments_app/screen/checkout_screen.dart';
 import 'package:openpayments_app/screen/home_screen.dart';
 import 'package:openpayments_app/screen/login_screen.dart';
 import 'package:openpayments_app/screen/register_screen.dart';
 import 'package:openpayments_app/screen/orders_screen.dart';
 import 'package:openpayments_app/screen/explore_screen.dart';
+import 'package:openpayments_app/screen/product_detail_screen.dart';
 import 'package:openpayments_app/screen/payment_confirmation_screen.dart';
+import 'package:openpayments_app/widgets/admin_shell.dart';
 import 'package:openpayments_app/widgets/app_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -28,13 +34,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       if (authState.isLoading) return null;
 
-      final isLoggedIn = authState is AsyncData && authState.value != null;
+      final session = authState.valueOrNull;
+      final isLoggedIn = session != null;
+      final isAdmin = session?.isAdmin ?? false;
       final isLoginRoute =
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/register';
 
       if (!isLoggedIn && !isLoginRoute) return '/login';
-      if (isLoggedIn && isLoginRoute) return '/explorar';
+      if (isLoggedIn && isLoginRoute) {
+        return isAdmin ? '/admin/dashboard' : '/explorar';
+      }
+
+      // Redirect from buyer shell to admin shell and vice versa
+      final isOnAdminRoute = state.matchedLocation.startsWith('/admin');
+      if (isAdmin && !isOnAdminRoute && !isLoginRoute) {
+        return '/admin/dashboard';
+      }
+      if (!isAdmin && isOnAdminRoute) {
+        return '/explorar';
+      }
+
       return null;
     },
     routes: [
@@ -43,6 +63,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'home',
         builder: (context, state) => const HomeScreen(),
       ),
+
+      // Buyer shell
       ShellRoute(
         builder: ((context, state, child) => AppShell(child: child)),
         routes: [
@@ -58,6 +80,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+
+      // Admin shell
+      ShellRoute(
+        builder: ((context, state, child) => AdminShell(child: child)),
+        routes: [
+          GoRoute(
+            path: '/admin/dashboard',
+            name: 'admin-dashboard',
+            builder: (context, state) => const AdminDashboardScreen(),
+          ),
+          GoRoute(
+            path: '/admin/artisans',
+            name: 'admin-artisans',
+            builder: (context, state) => const AdminArtisansScreen(),
+          ),
+          GoRoute(
+            path: '/admin/products',
+            name: 'admin-products',
+            builder: (context, state) => const AdminProductsScreen(),
+          ),
+          GoRoute(
+            path: '/admin/settings',
+            name: 'admin-settings',
+            builder: (context, state) => const AdminSettingsScreen(),
+          ),
+        ],
+      ),
+
+      // Overlay routes (push, not shell)
       GoRoute(
         path: '/account',
         name: 'account',
@@ -67,6 +118,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/checkout',
         name: 'checkout',
         builder: (context, state) => const CheckoutScreen(),
+      ),
+      GoRoute(
+        path: '/product/:id',
+        name: 'product',
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return ProductDetailScreen(productId: id);
+        },
       ),
       GoRoute(
         path: '/login',

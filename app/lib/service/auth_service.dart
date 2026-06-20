@@ -26,6 +26,7 @@ class AuthService {
         'email': email,
         'password': password,
         'name': name,
+        'role': 'buyer',
         if (normalizedWallet != null) 'wallet_address_url': normalizedWallet,
       },
     );
@@ -33,9 +34,15 @@ class AuthService {
     return Session.fromJson(json as Map<String, dynamic>);
   }
 
-  Future<User> me() async {
+  Future<Session> me(String token) async {
     final json = await _api.get('/api/auth/me');
-    return User.fromJson(json as Map<String, dynamic>);
+    final data = json as Map<String, dynamic>;
+    final user = User.fromJson(data['user'] as Map<String, dynamic>);
+    return Session(
+      token: token,
+      user: user,
+      galleryId: (data['gallery_id'] as num?)?.toInt() ?? 0,
+    );
   }
 
   String? _normalizeWallet(String? wallet) {

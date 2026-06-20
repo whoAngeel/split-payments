@@ -33,7 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      setState(() => _validationError = 'Completa todos los campos');
+      setState(() => _validationError = 'Fill in all fields');
       return;
     }
 
@@ -45,20 +45,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     final state = ref.read(authProvider);
     if (state is AsyncData && state.value != null) {
-      context.go('/explorar');
+      final session = state.value;
+      if (session!.isAdmin) {
+        context.go('/admin/dashboard');
+      } else {
+        context.go('/explorar');
+      }
     }
   }
 
   String _friendlyError(Object? error) {
     final msg = error.toString().toLowerCase();
     if (msg.contains('401') || msg.contains('invalid') || msg.contains('password')) {
-      return 'Correo o contraseña incorrectos';
+      return 'Incorrect email or password';
     }
     if (msg.contains('timeout') || msg.contains('timed out')) {
-      return 'El servidor tardó demasiado. Intenta de nuevo';
+      return 'Server took too long. Try again';
     }
     if (msg.contains('socket') || msg.contains('connection') || msg.contains('network')) {
-      return 'Sin conexión. Revisa tu internet';
+      return 'No connection. Check your internet';
     }
     return 'Error: ${error.toString()}';
   }
@@ -94,15 +99,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  authState.isLoading ? 'Ingresando...' : 'Ingresa para continuar',
+                  authState.isLoading ? 'Signing in...' : 'Sign in to continue',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
                 ),
                 const SizedBox(height: 40),
                 AppTextField(
-                  label: 'Correo electrónico',
-                  hint: 'usuario@gmail.com',
+                  label: 'Email',
+                  hint: 'user@example.com',
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
@@ -111,8 +116,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
-                  label: 'Contraseña',
-                  hint: 'Escribe tu contraseña',
+                  label: 'Password',
+                  hint: 'Enter your password',
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   textInputAction: TextInputAction.done,
@@ -153,20 +158,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ],
                 const SizedBox(height: 24),
                 AppButton(
-                  label: 'Ingresar',
+                  label: 'Sign in',
                   fullWidth: true,
                   onPressed: authState.isLoading ? null : _login,
                 ),
                 const SizedBox(height: 16),
                 if (authState.isLoading)
                   AppButton(
-                    label: 'Cancelar',
+                    label: 'Cancel',
                     variant: AppButtonVariant.text,
                     onPressed: () => ref.read(authProvider.notifier).cancelLogin(),
                   )
                 else
                   AppButton(
-                    label: 'Crear cuenta',
+                    label: 'Create account',
                     variant: AppButtonVariant.text,
                     onPressed: () => context.go('/register'),
                   ),

@@ -42,15 +42,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final confirm = _confirmController.text;
 
     if (name.isEmpty || email.isEmpty || password.isEmpty || confirm.isEmpty) {
-      setState(() => _validationError = 'Completa todos los campos');
+      setState(() => _validationError = 'Fill in all fields');
       return;
     }
     if (password.length < 8) {
-      setState(() => _validationError = 'La contraseña debe tener al menos 8 caracteres');
+      setState(() => _validationError = 'Password must be at least 8 characters');
       return;
     }
     if (password != confirm) {
-      setState(() => _validationError = 'Las contraseñas no coinciden');
+      setState(() => _validationError = "Passwords don't match");
       return;
     }
 
@@ -68,20 +68,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     final state = ref.read(authProvider);
     if (state is AsyncData && state.value != null) {
-      context.go('/explorar');
+      final session = state.value;
+      if (session!.isAdmin) {
+        context.go('/admin/dashboard');
+      } else {
+        context.go('/explorar');
+      }
     }
   }
 
   String _friendlyError(Object? error) {
     final msg = error.toString().toLowerCase();
     if (msg.contains('409') || msg.contains('conflict') || msg.contains('already')) {
-      return 'Este correo ya está registrado';
+      return 'This email is already registered';
     }
     if (msg.contains('timeout') || msg.contains('timed out')) {
-      return 'El servidor tardó demasiado. Intenta de nuevo';
+      return 'Server took too long. Try again';
     }
     if (msg.contains('socket') || msg.contains('connection') || msg.contains('network')) {
-      return 'Sin conexión. Revisa tu internet';
+      return 'No connection. Check your internet';
     }
     return 'Error: ${error.toString()}';
   }
@@ -105,7 +110,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 AppIconBox(icon: Icons.handshake_outlined, size: 72, radius: 20),
                 const SizedBox(height: 24),
                 Text(
-                  'Crear cuenta',
+                  'Create account',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: cs.onSurface,
                     fontWeight: FontWeight.w600,
@@ -113,15 +118,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  authState.isLoading ? 'Creando cuenta...' : 'Únete a Open Artisan',
+                  authState.isLoading ? 'Creating account...' : 'Join Open Artisan',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: cs.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 40),
                 AppTextField(
-                  label: 'Nombre',
-                  hint: 'Tu nombre completo',
+                  label: 'Name',
+                  hint: 'Your full name',
                   controller: _nameController,
                   textInputAction: TextInputAction.next,
                   prefixIcon: const Icon(Icons.person_outlined),
@@ -129,8 +134,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
-                  label: 'Correo electrónico',
-                  hint: 'usuario@gmail.com',
+                  label: 'Email',
+                  hint: 'user@example.com',
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
@@ -139,8 +144,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
-                  label: 'Contraseña',
-                  hint: 'Mínimo 8 caracteres',
+                  label: 'Password',
+                  hint: 'At least 8 characters',
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   textInputAction: TextInputAction.next,
@@ -157,7 +162,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
-                  label: 'Wallet (opcional)',
+                  label: 'Wallet (optional)',
                   hint: r'$wallet.example.com/usuario  o  https://...',
                   controller: _walletController,
                   keyboardType: TextInputType.url,
@@ -167,8 +172,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
-                  label: 'Confirmar contraseña',
-                  hint: 'Repite tu contraseña',
+                  label: 'Confirm password',
+                  hint: 'Repeat your password',
                   controller: _confirmController,
                   obscureText: _obscureConfirm,
                   textInputAction: TextInputAction.done,
@@ -209,13 +214,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ],
                 const SizedBox(height: 24),
                 AppButton(
-                  label: 'Crear cuenta',
+                  label: 'Create account',
                   fullWidth: true,
                   onPressed: authState.isLoading ? null : _register,
                 ),
                 const SizedBox(height: 16),
                 AppButton(
-                  label: 'Ya tengo cuenta',
+                  label: 'Already have an account',
                   variant: AppButtonVariant.text,
                   onPressed: authState.isLoading ? null : () => context.go('/login'),
                 ),

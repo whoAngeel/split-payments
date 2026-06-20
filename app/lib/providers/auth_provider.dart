@@ -20,8 +20,8 @@ class AuthNotifier extends AsyncNotifier<Session?> {
     api.token = token;
 
     try {
-      final user = await ref.read(authServiceProvider).me();
-      return Session(token: token, user: user);
+      final session = await ref.read(authServiceProvider).me(token);
+      return session;
     } catch (_) {
       await storage.delete(key: 'token');
       api.token = null;
