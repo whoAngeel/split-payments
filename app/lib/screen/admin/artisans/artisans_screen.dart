@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openpayments_app/models/artisan.dart';
 import 'package:openpayments_app/providers/admin_crud_provider.dart';
+import 'package:openpayments_app/providers/api_client_provider.dart';
 import 'package:openpayments_app/widgets/app_empty_state.dart';
 import 'package:openpayments_app/widgets/app_error_state.dart';
 
@@ -59,7 +60,7 @@ class _AdminArtisansScreenState extends ConsumerState<AdminArtisansScreen> {
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
                     child: Row(
                       children: [
                         Text(
@@ -120,77 +121,88 @@ class _ArtisanCard extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isActive ? cs.surfaceContainerLow : cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: isActive
-            ? null
-            : Border.all(color: cs.outlineVariant, width: 1),
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: isActive ? null : Border.all(color: cs.outlineVariant),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Info row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 12, 10),
+          // Row 1: [foto | acciones]
+          SizedBox(
+            height: 130,
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _ArtisanPhoto(artisan: artisan, size: 48),
-                const SizedBox(width: 14),
+                // Foto — fixed width, fills height of right col
+                SizedBox(
+                  width: 130,
+                  child: _ArtisanBanner(artisan: artisan),
+                ),
+                VerticalDivider(width: 1, color: cs.outlineVariant),
+                // Acciones — drives card height
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              artisan.name,
-                              style: tt.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: isActive ? cs.onSurface : cs.onSurfaceVariant,
-                                height: 1.2,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Toggle
+                        Row(
+                          children: [
+                            Switch(
+                              value: isActive,
+                              onChanged: (_) => _toggleArtisan(context, ref),
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                          ),
-                          if (!isActive) ...[
-                            const SizedBox(width: 8),
-                            _InactiveBadge(cs: cs, tt: tt),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.account_balance_wallet_outlined,
-                            size: 11,
-                            color: artisan.walletAddressUrl.isNotEmpty
-                                ? cs.primary
-                                : cs.outlineVariant,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              artisan.walletAddressUrl.isNotEmpty
-                                  ? artisan.walletAddressUrl
-                                  : 'Sin wallet',
+                            const SizedBox(width: 6),
+                            Text(
+                              isActive ? 'Activo' : 'Inactivo',
                               style: tt.labelSmall?.copyWith(
-                                color: artisan.walletAddressUrl.isNotEmpty
-                                    ? cs.onSurfaceVariant
-                                    : cs.outlineVariant,
-                                letterSpacing: 0,
+                                color: isActive ? cs.primary : cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                        const Spacer(),
+                        // Ver productos · editar · eliminar (una fila)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton.icon(
+                                onPressed: () => context.push(
+                                  '/admin/artisans/${artisan.id}/products',
+                                  extra: artisan.name,
+                                ),
+                                icon: const Icon(Icons.inventory_2_outlined, size: 13),
+                                label: const Text('Productos'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: cs.onSurfaceVariant,
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                                  visualDensity: VisualDensity.compact,
+                                  textStyle: tt.labelSmall?.copyWith(fontWeight: FontWeight.w500),
+                                  alignment: Alignment.centerLeft,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => context.push('/admin/artisans/${artisan.id}/edit'),
+                              icon: Icon(Icons.edit_outlined, size: 16, color: cs.onSurfaceVariant),
+                              visualDensity: VisualDensity.compact,
+                              tooltip: 'Editar artesano',
+                            ),
+                            IconButton(
+                              onPressed: () => _confirmDelete(context, ref),
+                              icon: Icon(Icons.delete_outline, size: 16, color: cs.error),
+                              visualDensity: VisualDensity.compact,
+                              tooltip: 'Eliminar artesano',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -199,51 +211,55 @@ class _ArtisanCard extends ConsumerWidget {
 
           Divider(height: 1, color: cs.outlineVariant),
 
-          // Action row
+          // Row 2: nombre + wallet (full width)
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Switch(
-                  value: isActive,
-                  onChanged: (_) => _toggleArtisan(context, ref),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  isActive ? 'Activo' : 'Inactivo',
-                  style: tt.labelSmall?.copyWith(
-                    color: isActive ? cs.primary : cs.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: () => context.push(
-                    '/admin/artisans/${artisan.id}/products',
-                    extra: artisan.name,
-                  ),
-                  icon: const Icon(Icons.inventory_2_outlined, size: 14),
-                  label: const Text('Productos'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: cs.onSurfaceVariant,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    visualDensity: VisualDensity.compact,
-                    textStyle: tt.labelSmall?.copyWith(fontWeight: FontWeight.w500),
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  iconSize: 20,
-                  icon: Icon(Icons.more_vert, size: 20, color: cs.onSurfaceVariant),
-                  onSelected: (action) => _onAction(action, context, ref),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'edit', child: Text('Editar')),
-                    const PopupMenuItem(value: 'products', child: Text('Ver productos')),
-                    PopupMenuItem(
-                      value: 'delete',
+                Row(
+                  children: [
+                    Expanded(
                       child: Text(
-                        'Eliminar',
-                        style: TextStyle(color: cs.error),
+                        artisan.name,
+                        style: tt.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: isActive ? cs.onSurface : cs.onSurfaceVariant,
+                          height: 1.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (!isActive) ...[
+                      const SizedBox(width: 8),
+                      _InactiveBadge(cs: cs, tt: tt),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 13,
+                      color: artisan.walletAddressUrl.isNotEmpty
+                          ? cs.primary
+                          : cs.outlineVariant,
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        artisan.walletAddressUrl.isNotEmpty
+                            ? artisan.walletAddressUrl
+                            : 'Sin wallet',
+                        style: tt.bodySmall?.copyWith(
+                          color: artisan.walletAddressUrl.isNotEmpty
+                              ? cs.onSurfaceVariant
+                              : cs.outlineVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -258,18 +274,22 @@ class _ArtisanCard extends ConsumerWidget {
 
   void _toggleArtisan(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final willActivate = !artisan.isActive;
+    final verb = willActivate ? 'activar' : 'desactivar';
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Cambiar estado'),
-        content: const Text('¿Aplicar el cambio a todos los productos de este artesano también?'),
+        title: Text('${willActivate ? 'Activar' : 'Desactivar'} artesano'),
+        content: Text(
+          '¿También quieres $verb los productos de ${artisan.name}?',
+        ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               ref.read(artisansProvider.notifier).toggleActive(artisan.id);
             },
-            child: const Text('Solo artesano'),
+            child: const Text('Solo el artesano'),
           ),
           FilledButton(
             onPressed: () {
@@ -280,22 +300,11 @@ class _ArtisanCard extends ConsumerWidget {
               backgroundColor: cs.inverseSurface,
               foregroundColor: cs.onInverseSurface,
             ),
-            child: const Text('Con productos'),
+            child: const Text('Artesano y productos'),
           ),
         ],
       ),
     );
-  }
-
-  void _onAction(String action, BuildContext context, WidgetRef ref) {
-    switch (action) {
-      case 'edit':
-        context.push('/admin/artisans/${artisan.id}/edit');
-      case 'products':
-        context.push('/admin/artisans/${artisan.id}/products', extra: artisan.name);
-      case 'delete':
-        _confirmDelete(context, ref);
-    }
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref) {
@@ -329,80 +338,51 @@ class _ArtisanCard extends ConsumerWidget {
 
 // ─── Artisan Photo ────────────────────────────────────────────────────────────
 
-class _ArtisanPhoto extends StatelessWidget {
+class _ArtisanBanner extends ConsumerWidget {
   final Artisan artisan;
-  final double size;
-
-  const _ArtisanPhoto({required this.artisan, required this.size});
+  const _ArtisanBanner({required this.artisan});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final initials = _initials(artisan.name);
-    final isActive = artisan.isActive;
+    final baseUrl = ref.read(apiClientProvider).baseUrl;
+    final imageUrl = artisan.imageUrl.isNotEmpty ? '$baseUrl${artisan.imageUrl}' : '';
 
-    Widget photo = artisan.imageUrl.isNotEmpty
-        ? ClipOval(
-            child: Image.network(
-              artisan.imageUrl,
-              width: size,
-              height: size,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _initialsWidget(initials, cs, tt),
-            ),
+    Widget content = imageUrl.isNotEmpty
+        ? Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (_, __, ___) => _initialsBlock(initials, cs, tt),
           )
-        : _initialsWidget(initials, cs, tt);
+        : _initialsBlock(initials, cs, tt);
 
-    if (!isActive) {
-      photo = Opacity(opacity: 0.45, child: photo);
+    if (!artisan.isActive) {
+      content = ColorFiltered(
+        colorFilter: const ColorFilter.matrix([
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0,      0,      0,      1, 0,
+        ]),
+        child: Opacity(opacity: 0.55, child: content),
+      );
     }
 
-    return Stack(
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: cs.primaryContainer,
-            border: Border.all(
-              color: isActive
-                  ? cs.primary.withValues(alpha: 0.25)
-                  : cs.outlineVariant,
-              width: 2,
-            ),
-          ),
-          child: ClipOval(child: photo),
-        ),
-        if (isActive)
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: Container(
-              width: 13,
-              height: 13,
-              decoration: BoxDecoration(
-                color: cs.primary,
-                shape: BoxShape.circle,
-                border: Border.all(color: cs.surface, width: 2),
-              ),
-            ),
-          ),
-      ],
-    );
+    return SizedBox.expand(child: content);
   }
 
-  Widget _initialsWidget(String initials, ColorScheme cs, TextTheme tt) {
+  Widget _initialsBlock(String initials, ColorScheme cs, TextTheme tt) {
     return Container(
-      width: size,
-      height: size,
       color: cs.primaryContainer,
       child: Center(
         child: Text(
           initials,
-          style: tt.titleSmall?.copyWith(
-            color: cs.onPrimaryContainer,
+          style: tt.displayMedium?.copyWith(
+            color: cs.onPrimaryContainer.withValues(alpha: 0.35),
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -473,47 +453,52 @@ class _SkeletonCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+          // Row 1 skeleton: [foto | acciones]
+          SizedBox(
+            height: 130,
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(color: block, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 14),
+                Container(width: 130, color: block),
+                Container(width: 1, color: cs.outlineVariant),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      _Rect(w: 140, h: 13, color: block),
-                      const SizedBox(height: 8),
-                      _Rect(w: 160, h: 9, color: block),
-                    ],
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Rect(w: 44, h: 20, r: 10, color: block),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            _Rect(w: 72, h: 10, color: block),
+                            const Spacer(),
+                            _Rect(w: 18, h: 18, r: 4, color: block),
+                            const SizedBox(width: 6),
+                            _Rect(w: 18, h: 18, r: 4, color: block),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           Divider(height: 1, color: cs.outlineVariant),
+          // Row 2 skeleton: nombre + wallet
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _Rect(w: 44, h: 20, r: 10, color: block),
-                const SizedBox(width: 8),
-                _Rect(w: 40, h: 9, color: block),
-                const Spacer(),
-                _Rect(w: 72, h: 24, r: 6, color: block),
-                const SizedBox(width: 8),
-                _Rect(w: 20, h: 20, r: 4, color: block),
+                _Rect(w: 140, h: 13, color: block),
+                const SizedBox(height: 6),
+                _Rect(w: 190, h: 9, color: block),
               ],
             ),
           ),
