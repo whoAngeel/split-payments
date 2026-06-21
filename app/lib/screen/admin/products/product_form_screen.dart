@@ -108,13 +108,35 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     final priceText = _priceController.text.trim();
     final commissionText = _commissionController.text.trim();
 
-    if (name.isEmpty || priceText.isEmpty || commissionText.isEmpty) {
-      setState(() => _error = 'Nombre, precio y comisión son requeridos');
+    if (name.isEmpty) {
+      setState(() => _error = 'El nombre es requerido');
+      return;
+    }
+    if (name.length < 2) {
+      setState(() => _error = 'El nombre debe tener al menos 2 caracteres');
+      return;
+    }
+    if (priceText.isEmpty) {
+      setState(() => _error = 'El precio es requerido');
+      return;
+    }
+    final priceValue = double.tryParse(priceText);
+    if (priceValue == null || priceValue <= 0) {
+      setState(() => _error = 'El precio debe ser un número positivo');
+      return;
+    }
+    if (commissionText.isEmpty) {
+      setState(() => _error = 'La comisión es requerida');
+      return;
+    }
+    final commissionValue = double.tryParse(commissionText);
+    if (commissionValue == null || commissionValue < 0 || commissionValue > 100) {
+      setState(() => _error = 'La comisión debe ser un número entre 0 y 100');
       return;
     }
 
-    final price = (double.parse(priceText) * 100).round();
-    final commission = (double.parse(commissionText) * 100).round();
+    final price = (priceValue * 100).round();
+    final commission = (commissionValue * 100).round();
 
     setState(() { _saving = true; _error = null; });
 

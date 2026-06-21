@@ -151,7 +151,11 @@ class _AdminProductDetailScreenState extends ConsumerState<AdminProductDetailScr
           const SizedBox(height: 24),
 
           // Images gallery
-          Text('Imágenes', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+          Row(children: [
+            Text('Imágenes', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            const Spacer(),
+            Text('${_images.length}/5', style: tt.labelMedium?.copyWith(color: _images.length >= 5 ? cs.error : cs.onSurfaceVariant)),
+          ]),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8, runSpacing: 8,
@@ -162,7 +166,7 @@ class _AdminProductDetailScreenState extends ConsumerState<AdminProductDetailScr
                   Positioned(top: 2, right: 2, child: GestureDetector(onTap: () => _deleteImage(_getId(img)), child: Container(decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)), padding: const EdgeInsets.all(2), child: const Icon(Icons.close, size: 16, color: Colors.white)))),
                 ],
               )),
-              _AddImageButton(onTap: _addImage),
+              if (_images.length < 5) _AddImageButton(onTap: _addImage),
             ],
           ),
         ],

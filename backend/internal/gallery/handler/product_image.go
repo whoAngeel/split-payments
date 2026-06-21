@@ -52,6 +52,10 @@ func (h *ProductImageHandler) Add(c *gin.Context) {
 
 	var count int64
 	h.db.Model(&model.ProductImage{}).Where("product_id = ?", uint(productID)).Count(&count)
+	if count >= 5 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "max 5 images per product"})
+		return
+	}
 
 	img := model.ProductImage{
 		ProductID: uint(productID),
