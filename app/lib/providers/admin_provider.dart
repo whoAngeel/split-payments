@@ -25,33 +25,3 @@ class DashboardNotifier extends AsyncNotifier<GalleryDashboard?> {
     state = await AsyncValue.guard(() => service.getDashboard(session.galleryId));
   }
 }
-
-final commissionProvider = AsyncNotifierProvider<CommissionNotifier, int>(
-  CommissionNotifier.new,
-);
-
-class CommissionNotifier extends AsyncNotifier<int> {
-  @override
-  Future<int> build() async {
-    final session = ref.read(authProvider).valueOrNull;
-    if (session == null || !session.isAdmin) return 0;
-
-    final service = ref.read(galleryServiceProvider);
-    final dashboard = await service.getDashboard(session.galleryId);
-    return dashboard.commissionRate;
-  }
-
-  Future<void> setCommission(int rate) async {
-    final session = ref.read(authProvider).valueOrNull;
-    if (session == null) return;
-
-    final service = ref.read(galleryServiceProvider);
-    state = await AsyncValue.guard(() async {
-      await service.setCommission(session.galleryId, rate);
-      return rate;
-    });
-
-    // Refresh dashboard counts after commission change
-    ref.invalidate(dashboardProvider);
-  }
-}

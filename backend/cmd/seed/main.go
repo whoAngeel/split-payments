@@ -96,9 +96,9 @@ func main() {
 		gallerySvc.AddArtisan(gallery.ID, galleryOwner.ID, artisan2.ID)
 		fmt.Printf("Artisans: %s, %s\n", artisan1.Name, artisan2.Name)
 
-		_, _ = productSvc.Create(artisan1.ID, "Alejibre de madera", "USD", 5000, 2, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400")
-		_, _ = productSvc.Create(artisan1.ID, "Máscara tradicional", "USD", 3500, 2, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400")
-		_, _ = productSvc.Create(artisan2.ID, "Tapete tejido", "USD", 8000, 2, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400")
+		_, _ = productSvc.Create(artisan1.ID, "Alejibre de madera", "USD", 5000, 2, 0, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400")
+		_, _ = productSvc.Create(artisan1.ID, "Máscara tradicional", "USD", 3500, 2, 0, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400")
+		_, _ = productSvc.Create(artisan2.ID, "Tapete tejido", "USD", 8000, 2, 0, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400")
 		fmt.Println("Products: Alebrije ($50.00), Máscara ($35.00), Tapete ($80.00)")
 	} else {
 		fmt.Println("Data already seeded, skipping.")

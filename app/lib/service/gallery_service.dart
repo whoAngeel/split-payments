@@ -127,6 +127,7 @@ class GalleryService {
     required String assetCode,
     int assetScale = 2,
     String imageUrl = '',
+    int commissionRate = 0,
   }) async {
     final json = await _api.post(
       '/api/galleries/$galleryId/artisans/$artisanId/products',
@@ -136,6 +137,7 @@ class GalleryService {
         'asset_code': assetCode,
         'asset_scale': assetScale,
         'image_url': imageUrl,
+        'commission_rate': commissionRate,
       },
     );
     return AdminProduct.fromJson(json as Map<String, dynamic>);
@@ -145,6 +147,7 @@ class GalleryService {
     String? name,
     int? basePrice,
     String? imageUrl,
+    int? commissionRate,
   }) async {
     final json = await _api.patch(
       '/api/galleries/$galleryId/products/$productId',
@@ -152,6 +155,7 @@ class GalleryService {
         if (name != null) 'name': name,
         if (basePrice != null) 'base_price': basePrice,
         if (imageUrl != null) 'image_url': imageUrl,
+        if (commissionRate != null) 'commission_rate': commissionRate,
       },
     );
     return AdminProduct.fromJson(json as Map<String, dynamic>);

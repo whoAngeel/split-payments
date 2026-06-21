@@ -105,7 +105,7 @@ class _AdminArtisanProductsScreenState extends ConsumerState<AdminArtisanProduct
                             color: p.isActive ? cs.surface : cs.surfaceContainerHighest,
                             child: ListTile(
                               title: Text(p.name, style: TextStyle(fontWeight: FontWeight.w600, color: p.isActive ? cs.onSurface : cs.onSurfaceVariant)),
-                              subtitle: Text('\$${(p.basePrice / 100).toStringAsFixed(2)} ${p.assetCode}', style: TextStyle(color: cs.onSurfaceVariant)),
+                              subtitle: Text('\$${(p.basePrice / 100).toStringAsFixed(2)} ${p.assetCode} · ${p.commissionPercent.toStringAsFixed(1)}%', style: TextStyle(color: cs.onSurfaceVariant)),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [

@@ -8,6 +8,7 @@ class AdminProduct {
   final int assetScale;
   final String imageUrl;
   final bool isActive;
+  final int commissionRate;
 
   const AdminProduct({
     required this.id,
@@ -19,6 +20,7 @@ class AdminProduct {
     this.assetScale = 2,
     this.imageUrl = '',
     this.isActive = true,
+    this.commissionRate = 0,
   });
 
   factory AdminProduct.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,9 @@ class AdminProduct {
       assetScale: json['asset_scale'] as int? ?? 2,
       imageUrl: json['image_url'] as String? ?? '',
       isActive: json['is_active'] as bool? ?? true,
+      commissionRate: json['commission_rate'] as int? ?? 0,
     );
   }
+
+  double get commissionPercent => commissionRate / 100.0;
 }

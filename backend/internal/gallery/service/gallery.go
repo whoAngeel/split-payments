@@ -88,12 +88,11 @@ func (s *GalleryService) AddArtisan(galleryID, userID, artisanID uint) error {
 }
 
 type GalleryDashboard struct {
-	Gallery         model.Gallery `json:"gallery"`
-	ActiveArtisans  int64         `json:"active_artisans"`
-	TotalArtisans   int64         `json:"total_artisans"`
-	ActiveProducts  int64         `json:"active_products"`
-	TotalProducts   int64         `json:"total_products"`
-	CommissionRate  int           `json:"commission_rate"`
+	Gallery        model.Gallery `json:"gallery"`
+	ActiveArtisans int64         `json:"active_artisans"`
+	TotalArtisans  int64         `json:"total_artisans"`
+	ActiveProducts int64         `json:"active_products"`
+	TotalProducts  int64         `json:"total_products"`
 }
 
 func (s *GalleryService) GetDashboard(galleryID, userID uint) (*GalleryDashboard, error) {
@@ -103,12 +102,8 @@ func (s *GalleryService) GetDashboard(galleryID, userID uint) (*GalleryDashboard
 	}
 
 	dashboard := &GalleryDashboard{
-		Gallery:        *gallery,
-		TotalArtisans:  int64(len(gallery.Artisans)),
-	}
-
-	if gallery.Commission != nil {
-		dashboard.CommissionRate = gallery.Commission.Rate
+		Gallery:       *gallery,
+		TotalArtisans: int64(len(gallery.Artisans)),
 	}
 
 	s.db.Model(&model.Artisan{}).

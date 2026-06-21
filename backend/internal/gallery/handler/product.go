@@ -63,11 +63,12 @@ func (h *ProductHandler) Explore(c *gin.Context) {
 }
 
 type createProductRequest struct {
-	Name       string `json:"name" binding:"required"`
-	BasePrice  int64  `json:"base_price" binding:"required,min=1"`
-	AssetCode  string `json:"asset_code" binding:"required"`
-	AssetScale int    `json:"asset_scale"`
-	ImageURL   string `json:"image_url"`
+	Name           string `json:"name" binding:"required"`
+	BasePrice      int64  `json:"base_price" binding:"required,min=1"`
+	AssetCode      string `json:"asset_code" binding:"required"`
+	AssetScale     int    `json:"asset_scale"`
+	ImageURL       string `json:"image_url"`
+	CommissionRate int    `json:"commission_rate"`
 }
 
 func (h *ProductHandler) Create(c *gin.Context) {
@@ -83,7 +84,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		return
 	}
 
-	product, err := h.svc.Create(uint(artisanID), req.Name, req.AssetCode, req.BasePrice, req.AssetScale, req.ImageURL)
+	product, err := h.svc.Create(uint(artisanID), req.Name, req.AssetCode, req.BasePrice, req.AssetScale, req.CommissionRate, req.ImageURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -136,9 +137,10 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 }
 
 type updateProductRequest struct {
-	Name      string `json:"name"`
-	BasePrice int64  `json:"base_price"`
-	ImageURL  string `json:"image_url"`
+	Name           string `json:"name"`
+	BasePrice      int64  `json:"base_price"`
+	ImageURL       string `json:"image_url"`
+	CommissionRate int    `json:"commission_rate"`
 }
 
 func (h *ProductHandler) Update(c *gin.Context) {
@@ -154,7 +156,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		return
 	}
 
-	product, err := h.svc.Update(uint(id), req.Name, req.ImageURL, req.BasePrice)
+	product, err := h.svc.Update(uint(id), req.Name, req.ImageURL, req.BasePrice, req.CommissionRate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

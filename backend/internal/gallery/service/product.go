@@ -16,14 +16,15 @@ func NewProductService(db *gorm.DB) *ProductService {
 	return &ProductService{db: db}
 }
 
-func (s *ProductService) Create(artisanID uint, name, assetCode string, basePrice int64, assetScale int, imageURL string) (*model.Product, error) {
+func (s *ProductService) Create(artisanID uint, name, assetCode string, basePrice int64, assetScale int, commissionRate int, imageURL string) (*model.Product, error) {
 	product := model.Product{
-		ArtisanID:  artisanID,
-		Name:       name,
-		BasePrice:  basePrice,
-		AssetCode:  assetCode,
-		AssetScale: assetScale,
-		ImageURL:   imageURL,
+		ArtisanID:      artisanID,
+		Name:           name,
+		BasePrice:      basePrice,
+		AssetCode:      assetCode,
+		AssetScale:     assetScale,
+		ImageURL:       imageURL,
+		CommissionRate: commissionRate,
 	}
 	if err := s.db.Create(&product).Error; err != nil {
 		return nil, fmt.Errorf("creating product: %w", err)
@@ -67,7 +68,7 @@ func (s *ProductService) Delete(productID uint) error {
 	return nil
 }
 
-func (s *ProductService) Update(productID uint, name, imageURL string, basePrice int64) (*model.Product, error) {
+func (s *ProductService) Update(productID uint, name, imageURL string, basePrice int64, commissionRate int) (*model.Product, error) {
 	var product model.Product
 	if err := s.db.First(&product, productID).Error; err != nil {
 		return nil, fmt.Errorf("product not found")
@@ -81,6 +82,9 @@ func (s *ProductService) Update(productID uint, name, imageURL string, basePrice
 	}
 	if basePrice > 0 {
 		product.BasePrice = basePrice
+	}
+	if commissionRate >= 0 {
+		product.CommissionRate = commissionRate
 	}
 
 	if err := s.db.Save(&product).Error; err != nil {
@@ -122,7 +126,7 @@ type ExploreProduct struct {
 func (s *ProductService) ListAllExplore() ([]ExploreProduct, error) {
 	var products []model.Product
 	if err := s.db.
-		Preload("Artisan.Galleries.Commission").
+		Preload("Artisan").
 		Joins("JOIN artisans ON artisans.id = products.artisan_id").
 		Where("products.is_active = ? AND artisans.is_active = ?", true, true).
 		Order("products.created_at DESC").
@@ -141,9 +145,8 @@ func (s *ProductService) ListAllExplore() ([]ExploreProduct, error) {
 			ArtisanName: p.Artisan.Name,
 			ImageURL:    p.ImageURL,
 		}
-		if len(p.Artisan.Galleries) > 0 && p.Artisan.Galleries[0].Commission != nil {
-			rate := p.Artisan.Galleries[0].Commission.Rate
-			galleryPct := rate / 100
+		if p.CommissionRate > 0 {
+			galleryPct := p.CommissionRate / 100
 			ep.Split = &ProductSplit{
 				ArtisanPercent:  100 - galleryPct,
 				GalleryPercent:  galleryPct,
@@ -180,7 +183,7 @@ type ArtisanResponse struct {
 
 func (s *ProductService) GetDetail(productID uint) (*ProductDetailResponse, error) {
 	var product model.Product
-	if err := s.db.Preload("Artisan.Galleries.Commission").First(&product, productID).Error; err != nil {
+	if err := s.db.Preload("Artisan").First(&product, productID).Error; err != nil {
 		return nil, fmt.Errorf("product not found: %w", err)
 	}
 	if !product.IsActive || !product.Artisan.IsActive {
@@ -219,9 +222,8 @@ func (s *ProductService) GetDetail(productID uint) (*ProductDetailResponse, erro
 			WalletAddressURL: product.Artisan.WalletAddressURL,
 		},
 	}
-	if len(product.Artisan.Galleries) > 0 && product.Artisan.Galleries[0].Commission != nil {
-		rate := product.Artisan.Galleries[0].Commission.Rate
-		galleryPct := rate / 100
+	if product.CommissionRate > 0 {
+		galleryPct := product.CommissionRate / 100
 		resp.Split = &ProductSplit{
 			ArtisanPercent:  100 - galleryPct,
 			GalleryPercent:  galleryPct,

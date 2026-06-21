@@ -79,11 +79,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               const SizedBox(height: 12),
               AppCard(
                 child: _MetricTile(
-                  icon: Icons.percent,
-                  label: 'Comisión',
-                  value: '${dashboard.commissionPercent.toStringAsFixed(1)}%',
-                  subtitle: 'sobre precio base',
-                  color: cs.tertiary,
+                  icon: Icons.inventory_2,
+                  label: 'Productos',
+                  value: '${dashboard.activeProducts} / ${dashboard.totalProducts}',
+                  subtitle: 'activos / total',
+                  color: cs.secondary,
                 ),
               ),
             ],

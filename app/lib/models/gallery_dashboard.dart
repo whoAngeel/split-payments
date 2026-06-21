@@ -18,7 +18,6 @@ class GalleryDashboard {
   final int totalArtisans;
   final int activeProducts;
   final int totalProducts;
-  final int commissionRate;
 
   const GalleryDashboard({
     required this.gallery,
@@ -26,7 +25,6 @@ class GalleryDashboard {
     required this.totalArtisans,
     required this.activeProducts,
     required this.totalProducts,
-    required this.commissionRate,
   });
 
   factory GalleryDashboard.fromJson(Map<String, dynamic> json) {
@@ -36,9 +34,6 @@ class GalleryDashboard {
       totalArtisans: (json['total_artisans'] as num).toInt(),
       activeProducts: (json['active_products'] as num).toInt(),
       totalProducts: (json['total_products'] as num).toInt(),
-      commissionRate: (json['commission_rate'] as num).toInt(),
     );
   }
-
-  double get commissionPercent => commissionRate / 100.0;
 }

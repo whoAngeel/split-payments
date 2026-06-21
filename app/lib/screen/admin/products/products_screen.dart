@@ -60,7 +60,7 @@ class _AdminProductsScreenState extends ConsumerState<AdminProductsScreen> {
                     ),
                   ),
                   subtitle: Text(
-                    '${p.artisanName} · \$${(p.basePrice / 100).toStringAsFixed(2)} ${p.assetCode}',
+                    '${p.artisanName} · \$${(p.basePrice / 100).toStringAsFixed(2)} ${p.assetCode} · ${p.commissionPercent.toStringAsFixed(1)}%',
                     style: TextStyle(color: cs.onSurfaceVariant),
                   ),
                   trailing: Row(
