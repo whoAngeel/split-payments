@@ -132,7 +132,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
                   ],
                   Divider(height: 1, color: cs.outlineVariant),
                   const SizedBox(height: 24),
-                  _ArtisanRow(detail: detail, cs: cs),
+                  _ArtisanRow(detail: detail, cs: cs, baseUrl: baseUrl),
                   const SizedBox(height: 120),
                 ],
               ),
@@ -557,8 +557,9 @@ class _Description extends StatelessWidget {
 class _ArtisanRow extends StatelessWidget {
   final ProductDetail detail;
   final ColorScheme cs;
+  final String baseUrl;
 
-  const _ArtisanRow({required this.detail, required this.cs});
+  const _ArtisanRow({required this.detail, required this.cs, this.baseUrl = ''});
 
   @override
   Widget build(BuildContext context) {
@@ -573,7 +574,7 @@ class _ArtisanRow extends StatelessWidget {
           radius: 28,
           backgroundColor: cs.primaryContainer,
           backgroundImage: detail.artisan.imageUrl.isNotEmpty
-              ? NetworkImage(detail.artisan.imageUrl)
+              ? NetworkImage(detail.artisan.imageUrl.startsWith('http') ? detail.artisan.imageUrl : '$baseUrl${detail.artisan.imageUrl}')
               : null,
           child: detail.artisan.imageUrl.isEmpty
               ? Text(
