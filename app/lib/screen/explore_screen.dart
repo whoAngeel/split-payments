@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../models/product.dart';
 import '../providers/gallery_provider.dart';
-import '../providers/checkout_provider.dart';
 import '../widgets/product_card.dart';
 import '../widgets/app_chip.dart';
 
@@ -217,10 +216,9 @@ class _ExploreContentState extends ConsumerState<_ExploreContent> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: ProductCard(
                       product: product,
-                      onBuy: () {
-                        ref.read(selectedProductProvider.notifier).state = product;
-                        context.push('/checkout');
-                      },
+                  onBuy: () {
+                    context.push('/product/${product.id}');
+                  },
                     ),
                   );
                 }, childCount: filtered.length),

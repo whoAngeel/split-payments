@@ -17,7 +17,7 @@ class AccountScreen extends ConsumerWidget {
         backgroundColor: cs.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text('Mi cuenta'),
+        title: const Text('My account'),
       ),
       body: SafeArea(
         child: Column(
@@ -27,7 +27,7 @@ class AccountScreen extends ConsumerWidget {
             if (user != null) ...[
               _InfoRow(
                 icon: Icons.email_outlined,
-                label: 'Correo',
+                label: 'Email',
                 value: user.email,
               ),
               Divider(height: 1, indent: 56, color: cs.outlineVariant),
@@ -42,7 +42,7 @@ class AccountScreen extends ConsumerWidget {
                 _InfoRow(
                   icon: Icons.account_balance_wallet_outlined,
                   label: 'Wallet',
-                  value: 'Sin wallet configurada',
+                  value: 'No wallet configured',
                   muted: true,
                 ),
                 Divider(height: 1, color: cs.outlineVariant),
@@ -205,7 +205,7 @@ class _LogoutButton extends StatelessWidget {
           onPressed: onPressed,
           icon: Icon(Icons.logout, size: 18, color: cs.error),
           label: Text(
-            'Cerrar sesión',
+            'Sign out',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: cs.error,
               fontWeight: FontWeight.w600,
