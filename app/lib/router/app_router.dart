@@ -22,7 +22,7 @@ import 'package:openpayments_app/widgets/app_shell.dart';
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
   return GoRouter(
-    initialLocation: '/explorar',
+    initialLocation: '/',
     redirect: (context, state) {
       final location = state.matchedLocation;
 
@@ -34,7 +34,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return '/payment/complete?session_id=$sessionId&status=$status';
       }
 
-      if (authState.isLoading) return null;
+      // Show loading while auth resolves
+      if (authState.isLoading) {
+        return location == '/' ? null : '/';
+      }
 
       final session = authState.valueOrNull;
       final isLoggedIn = session != null;

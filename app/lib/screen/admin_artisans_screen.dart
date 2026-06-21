@@ -6,11 +6,24 @@ import 'package:openpayments_app/providers/admin_crud_provider.dart';
 import 'package:openpayments_app/widgets/app_empty_state.dart';
 import 'package:openpayments_app/widgets/app_error_state.dart';
 
-class AdminArtisansScreen extends ConsumerWidget {
+class AdminArtisansScreen extends ConsumerStatefulWidget {
   const AdminArtisansScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminArtisansScreen> createState() => _AdminArtisansScreenState();
+}
+
+class _AdminArtisansScreenState extends ConsumerState<AdminArtisansScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(artisansProvider.notifier).refresh();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final artisansAsync = ref.watch(artisansProvider);
 
     return artisansAsync.when(
