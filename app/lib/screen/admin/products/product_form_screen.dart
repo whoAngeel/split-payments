@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:openpayments_app/providers/admin_crud_provider.dart';
 import 'package:openpayments_app/providers/api_client_provider.dart';
+import 'package:openpayments_app/providers/auth_provider.dart';
 
 class ProductFormScreen extends ConsumerStatefulWidget {
   final int artisanId;
@@ -37,20 +38,24 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     if (_isEdit) _loadProduct();
   }
 
-  void _loadProduct() {
-    final products = ref.read(adminProductsProvider).valueOrNull ?? [];
-    final product = products.where((p) => p.id == widget.productId).firstOrNull;
-    if (product != null) {
-      _nameController.text = product.name;
-      _priceController.text = (product.basePrice / 100).toStringAsFixed(2);
-      _commissionController.text = product.commissionPercent.toStringAsFixed(1);
-      _descriptionController.text = product.description;
-      _materialsController.text = product.materials;
-      _dimensionsController.text = product.dimensions;
-      _tagsController.text = product.tags;
-      _imageController.text = product.imageUrl;
-      if (product.imageUrl.isNotEmpty) _previewUrl = product.imageUrl;
-    }
+  void _loadProduct() async {
+    final galleryId = ref.read(authProvider).valueOrNull?.galleryId ?? 0;
+    if (galleryId == 0) return;
+    try {
+      final service = ref.read(galleryServiceProvider);
+      final product = await service.getAdminProductDetail(galleryId, widget.productId!);
+      if (mounted) {
+        _nameController.text = product.name;
+        _priceController.text = (product.basePrice / 100).toStringAsFixed(2);
+        _commissionController.text = product.commissionPercent.toStringAsFixed(1);
+        _descriptionController.text = product.description;
+        _materialsController.text = product.materials;
+        _dimensionsController.text = product.dimensions;
+        _tagsController.text = product.tags;
+        _imageController.text = product.imageUrl;
+        if (product.imageUrl.isNotEmpty) setState(() => _previewUrl = product.imageUrl);
+      }
+    } catch (_) {}
   }
 
   @override
