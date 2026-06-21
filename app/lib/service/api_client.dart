@@ -52,6 +52,15 @@ class ApiClient {
     return _handle(response);
   }
 
+  Future<dynamic> put(String path, {Map<String, dynamic>? body}) async {
+    final uri = Uri.parse('$baseURL$path');
+    _logger?.d('PUT $uri');
+    final response = await _client
+        .put(uri, headers: _headers, body: body != null ? jsonEncode(body) : null)
+        .timeout(_timeout);
+    return _handle(response);
+  }
+
   dynamic _handle(http.Response response) {
     final body = response.body.isNotEmpty ? jsonDecode(response.body) : null;
 
