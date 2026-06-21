@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:openpayments_app/screen/payment_confirmation_screen.dart';
+import 'package:openpayments_app/screen/payment/payment_confirmation_screen.dart';
 import 'package:openpayments_app/providers/auth_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +11,7 @@ import 'package:openpayments_app/providers/checkout_provider.dart';
 import 'package:openpayments_app/providers/api_client_provider.dart';
 import 'package:openpayments_app/widgets/app_text_field.dart';
 
-import '../widgets/app_scaffold.dart';
+import '../../widgets/app_scaffold.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});

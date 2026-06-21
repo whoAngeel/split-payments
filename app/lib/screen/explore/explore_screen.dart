@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../models/product.dart';
-import '../providers/gallery_provider.dart';
-import '../widgets/product_card.dart';
-import '../widgets/app_chip.dart';
+import '../../models/product.dart';
+import '../../providers/gallery_provider.dart';
+import '../../widgets/product_card.dart';
+import '../../widgets/app_chip.dart';
 
 class ExploreScreen extends ConsumerWidget {
   const ExploreScreen({super.key});

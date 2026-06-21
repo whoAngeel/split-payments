@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../models/product.dart';
-import '../models/product_detail.dart';
-import '../providers/gallery_provider.dart';
-import '../providers/checkout_provider.dart';
+import '../../models/product.dart';
+import '../../models/product_detail.dart';
+import '../../providers/gallery_provider.dart';
+import '../../providers/checkout_provider.dart';
 
 class ProductDetailScreen extends ConsumerWidget {
   final int productId;

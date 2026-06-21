@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../models/product.dart';
-import '../providers/checkout_provider.dart';
-import '../providers/api_client_provider.dart';
-import '../service/ws_service.dart';
+import '../../models/product.dart';
+import '../../providers/checkout_provider.dart';
+import '../../providers/api_client_provider.dart';
+import '../../service/ws_service.dart';
 
 class PaymentConfirmationScreen extends ConsumerStatefulWidget {
   final String sessionId;

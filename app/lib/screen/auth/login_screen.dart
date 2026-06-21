@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:openpayments_app/providers/auth_provider.dart';
 
-import '../widgets/app_scaffold.dart';
-import '../widgets/app_text_field.dart';
-import '../widgets/app_button.dart';
-import '../widgets/app_icon_box.dart';
+import '../../widgets/app_scaffold.dart';
+import '../../widgets/app_text_field.dart';
+import '../../widgets/app_button.dart';
+import '../../widgets/app_icon_box.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});

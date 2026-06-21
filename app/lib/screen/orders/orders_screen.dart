@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers/payments_provider.dart';
-import '../widgets/app_error_state.dart';
-import '../widgets/empty_payments.dart';
-import '../widgets/payment_card.dart';
+import '../../providers/payments_provider.dart';
+import '../../widgets/app_error_state.dart';
+import '../../widgets/empty_payments.dart';
+import '../../widgets/payment_card.dart';
 
 class OrdersScreen extends ConsumerWidget {
   const OrdersScreen({super.key});
