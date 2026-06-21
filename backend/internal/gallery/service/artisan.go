@@ -15,10 +15,16 @@ func NewArtisanService(db *gorm.DB) *ArtisanService {
 	return &ArtisanService{db: db}
 }
 
-func (s *ArtisanService) Create(name, walletAddressURL string) (*model.Artisan, error) {
+func (s *ArtisanService) Create(name, walletAddressURL, imageURL, bio, location, specialty, craftType, tags string) (*model.Artisan, error) {
 	artisan := model.Artisan{
 		Name:             name,
 		WalletAddressURL: walletAddressURL,
+		ImageURL:         imageURL,
+		Bio:              bio,
+		Location:         location,
+		Specialty:        specialty,
+		CraftType:        craftType,
+		Tags:             tags,
 	}
 	if err := s.db.Create(&artisan).Error; err != nil {
 		return nil, fmt.Errorf("creating artisan: %w", err)
@@ -53,7 +59,7 @@ func (s *ArtisanService) ListByGallery(galleryID uint) ([]model.Artisan, error) 
 	return artisans, nil
 }
 
-func (s *ArtisanService) Update(id uint, name, walletAddressURL, imageURL, bio string) (*model.Artisan, error) {
+func (s *ArtisanService) Update(id uint, name, walletAddressURL, imageURL, bio, location, specialty, craftType, tags string) (*model.Artisan, error) {
 	var artisan model.Artisan
 	if err := s.db.First(&artisan, id).Error; err != nil {
 		return nil, fmt.Errorf("artisan not found")
@@ -65,6 +71,10 @@ func (s *ArtisanService) Update(id uint, name, walletAddressURL, imageURL, bio s
 	artisan.WalletAddressURL = walletAddressURL
 	artisan.ImageURL = imageURL
 	artisan.Bio = bio
+	artisan.Location = location
+	artisan.Specialty = specialty
+	artisan.CraftType = craftType
+	artisan.Tags = tags
 
 	if err := s.db.Save(&artisan).Error; err != nil {
 		return nil, fmt.Errorf("updating artisan: %w", err)

@@ -31,10 +31,10 @@ class ArtisansNotifier extends AsyncNotifier<List<Artisan>> {
     ref.invalidate(dashboardProvider);
   }
 
-  Future<void> updateArtisan(int artisanId, {String? name, String? walletAddressUrl, String? imageUrl, String? bio}) async {
+  Future<void> updateArtisan(int artisanId, {String? name, String? walletAddressUrl, String? imageUrl, String? bio, String? location, String? specialty, String? craftType, String? tags}) async {
     final service = ref.read(galleryServiceProvider);
     state = await AsyncValue.guard(() async {
-      await service.updateArtisan(_galleryId, artisanId, name: name, walletAddressUrl: walletAddressUrl, imageUrl: imageUrl, bio: bio);
+      await service.updateArtisan(_galleryId, artisanId, name: name, walletAddressUrl: walletAddressUrl, imageUrl: imageUrl, bio: bio, location: location, specialty: specialty, craftType: craftType, tags: tags);
       return service.getArtisans(_galleryId);
     });
   }

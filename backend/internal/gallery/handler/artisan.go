@@ -22,6 +22,10 @@ type createArtisanRequest struct {
 	WalletAddressURL string `json:"wallet_address_url" binding:"required"`
 	ImageURL         string `json:"image_url"`
 	Bio              string `json:"bio"`
+	Location         string `json:"location"`
+	Specialty        string `json:"specialty"`
+	CraftType        string `json:"craft_type"`
+	Tags             string `json:"tags"`
 }
 
 func (h *ArtisanHandler) Create(c *gin.Context) {
@@ -33,7 +37,7 @@ func (h *ArtisanHandler) Create(c *gin.Context) {
 		return
 	}
 
-	artisan, err := h.svc.Create(req.Name, req.WalletAddressURL)
+	artisan, err := h.svc.Create(req.Name, req.WalletAddressURL, req.ImageURL, req.Bio, req.Location, req.Specialty, req.CraftType, req.Tags)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -79,6 +83,10 @@ type updateArtisanRequest struct {
 	WalletAddressURL string `json:"wallet_address_url"`
 	ImageURL         string `json:"image_url"`
 	Bio              string `json:"bio"`
+	Location         string `json:"location"`
+	Specialty        string `json:"specialty"`
+	CraftType        string `json:"craft_type"`
+	Tags             string `json:"tags"`
 }
 
 func (h *ArtisanHandler) Update(c *gin.Context) {
@@ -94,7 +102,7 @@ func (h *ArtisanHandler) Update(c *gin.Context) {
 		return
 	}
 
-	artisan, err := h.svc.Update(uint(id), req.Name, req.WalletAddressURL, req.ImageURL, req.Bio)
+	artisan, err := h.svc.Update(uint(id), req.Name, req.WalletAddressURL, req.ImageURL, req.Bio, req.Location, req.Specialty, req.CraftType, req.Tags)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

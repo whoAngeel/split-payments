@@ -8,7 +8,7 @@ func TestArtisanService_Create(t *testing.T) {
 	db := setupTestDB(t)
 	svc := NewArtisanService(db)
 
-	artisan, err := svc.Create("Artisan 1", "https://wallet.example/artisan1")
+	artisan, err := svc.Create("Artisan 1", "https://wallet.example/artisan1", "", "", "", "", "", "")
 	if err != nil {
 		t.Fatalf("create artisan failed: %v", err)
 	}
@@ -25,8 +25,8 @@ func TestArtisanService_List(t *testing.T) {
 	db := setupTestDB(t)
 	svc := NewArtisanService(db)
 
-	_, _ = svc.Create("A", "https://w.example/a")
-	_, _ = svc.Create("B", "https://w.example/b")
+	_, _ = svc.Create("A", "https://w.example/a", "", "", "", "", "", "")
+	_, _ = svc.Create("B", "https://w.example/b", "", "", "", "", "", "")
 
 	artisans, err := svc.List()
 	if err != nil {
@@ -42,7 +42,7 @@ func TestArtisanService_Get(t *testing.T) {
 	db := setupTestDB(t)
 	svc := NewArtisanService(db)
 
-	created, _ := svc.Create("Artisan X", "https://w.example/x")
+	created, _ := svc.Create("Artisan X", "https://w.example/x", "", "", "", "", "", "")
 
 	artisan, err := svc.Get(created.ID)
 	if err != nil {

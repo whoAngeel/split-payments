@@ -14,6 +14,12 @@ class AdminArtisanFormScreen extends ConsumerStatefulWidget {
 class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen> {
   final _nameController = TextEditingController();
   final _walletController = TextEditingController();
+  final _imageController = TextEditingController();
+  final _bioController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _specialtyController = TextEditingController();
+  final _craftTypeController = TextEditingController();
+  final _tagsController = TextEditingController();
   bool _saving = false;
   String? _error;
   bool get _isEdit => widget.artisanId != null;
@@ -21,9 +27,7 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
   @override
   void initState() {
     super.initState();
-    if (_isEdit) {
-      _loadArtisan();
-    }
+    if (_isEdit) _loadArtisan();
   }
 
   void _loadArtisan() {
@@ -32,6 +36,12 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
     if (artisan != null) {
       _nameController.text = artisan.name;
       _walletController.text = artisan.walletAddressUrl;
+      _imageController.text = artisan.imageUrl;
+      _bioController.text = artisan.bio;
+      _locationController.text = artisan.location;
+      _specialtyController.text = artisan.specialty;
+      _craftTypeController.text = artisan.craftType;
+      _tagsController.text = artisan.tags;
     }
   }
 
@@ -39,6 +49,12 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
   void dispose() {
     _nameController.dispose();
     _walletController.dispose();
+    _imageController.dispose();
+    _bioController.dispose();
+    _locationController.dispose();
+    _specialtyController.dispose();
+    _craftTypeController.dispose();
+    _tagsController.dispose();
     super.dispose();
   }
 
@@ -58,6 +74,12 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
         widget.artisanId!,
         name: name,
         walletAddressUrl: wallet,
+        imageUrl: _imageController.text.trim(),
+        bio: _bioController.text.trim(),
+        location: _locationController.text.trim(),
+        specialty: _specialtyController.text.trim(),
+        craftType: _craftTypeController.text.trim(),
+        tags: _tagsController.text.trim(),
       );
     } else {
       await ref.read(artisansProvider.notifier).create(name, wallet);
@@ -78,45 +100,51 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEdit ? 'Editar artesano' : 'Nuevo artesano'),
-      ),
-      body: Padding(
+      appBar: AppBar(title: Text(_isEdit ? 'Editar artesano' : 'Nuevo artesano')),
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nombre',
-                border: OutlineInputBorder(),
-              ),
-              enabled: !_saving,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _walletController,
-              decoration: const InputDecoration(
-                labelText: 'Wallet Address URL',
-                border: OutlineInputBorder(),
-              ),
-              enabled: !_saving,
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(_error!, style: TextStyle(color: cs.error)),
-            ],
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _saving ? null : _save,
-                child: Text(_isEdit ? 'Guardar cambios' : 'Crear artesano'),
-              ),
-            ),
+        children: [
+          _buildField('Nombre *', _nameController),
+          const SizedBox(height: 12),
+          _buildField('Wallet Address URL *', _walletController),
+          const SizedBox(height: 12),
+          _buildField('Imagen URL', _imageController),
+          const SizedBox(height: 12),
+          _buildField('Ubicación (ej: Oaxaca, México)', _locationController),
+          const SizedBox(height: 12),
+          _buildField('Especialidad (ej: Textiles, Cerámica)', _specialtyController),
+          const SizedBox(height: 12),
+          _buildField('Tipo de artesanía', _craftTypeController),
+          const SizedBox(height: 12),
+          _buildField('Biografía', _bioController, maxLines: 3),
+          const SizedBox(height: 12),
+          _buildField('Tags (separados por coma)', _tagsController),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Text(_error!, style: TextStyle(color: cs.error)),
           ],
-        ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _saving ? null : _save,
+              child: Text(_isEdit ? 'Guardar cambios' : 'Crear artesano'),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildField(String label, TextEditingController controller, {int maxLines = 1}) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      enabled: !_saving,
     );
   }
 }

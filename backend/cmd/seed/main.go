@@ -90,8 +90,8 @@ func main() {
 	var artisanCount int64
 	db.Model(&model.Artisan{}).Count(&artisanCount)
 	if artisanCount == 0 {
-		artisan1, _ := artisanSvc.Create("María Hernández", "https://ilp.interledger-test.dev/mochi")
-		artisan2, _ := artisanSvc.Create("Juan López", "https://ilp.interledger-test.dev/angeel")
+		artisan1, _ := artisanSvc.Create("María Hernández", "https://ilp.interledger-test.dev/mochi", "", "", "", "", "", "")
+		artisan2, _ := artisanSvc.Create("Juan López", "https://ilp.interledger-test.dev/angeel", "", "", "", "", "", "")
 		gallerySvc.AddArtisan(gallery.ID, galleryOwner.ID, artisan1.ID)
 		gallerySvc.AddArtisan(gallery.ID, galleryOwner.ID, artisan2.ID)
 		fmt.Printf("Artisans: %s, %s\n", artisan1.Name, artisan2.Name)

@@ -141,7 +141,7 @@ func TestGalleryService_AddRemoveArtisan(t *testing.T) {
 	db.Create(&user)
 
 	artisanSvc := NewArtisanService(db)
-	artisan, _ := artisanSvc.Create("Artisan", "https://w.example/a")
+	artisan, _ := artisanSvc.Create("Artisan", "https://w.example/a", "", "", "", "", "", "")
 
 	svc := NewGalleryService(db)
 	gallery, _ := svc.CreateGallery(user.ID, "G")
