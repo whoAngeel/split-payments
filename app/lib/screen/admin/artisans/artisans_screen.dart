@@ -348,7 +348,8 @@ class _ArtisanBanner extends ConsumerWidget {
     final tt = Theme.of(context).textTheme;
     final initials = _initials(artisan.name);
     final baseUrl = ref.read(apiClientProvider).baseUrl;
-    final imageUrl = artisan.imageUrl.isNotEmpty ? '$baseUrl${artisan.imageUrl}' : '';
+    final rawUrl = artisan.imageUrl;
+    final imageUrl = rawUrl.isNotEmpty ? '$baseUrl${rawUrl.replaceAll('_medium.', '_thumb.')}' : '';
 
     Widget content = imageUrl.isNotEmpty
         ? Image.network(
@@ -356,6 +357,7 @@ class _ArtisanBanner extends ConsumerWidget {
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
+            cacheWidth: 200,
             errorBuilder: (_, __, ___) => _initialsBlock(initials, cs, tt),
           )
         : _initialsBlock(initials, cs, tt);
