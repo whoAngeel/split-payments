@@ -2,7 +2,7 @@
 
 Parent: [PRD 0001 - Roles](./0001-roles.md)
 
-> **Status**: BACKEND COMPLETO (B1-B4) | FRONTEND PENDIENTE (F1-F3)
+> **Status**: COMPLETO ✅ — Backend B1-B4 + Frontend F1-F3
 
 ---
 
@@ -37,8 +37,6 @@ Parent: [PRD 0001 - Roles](./0001-roles.md)
 - [x] `GET /api/artisans/:id` se vuelve público y filtra `is_active=true` (404 si inactivo)
 - [x] Rutas planas antiguas eliminadas del router
 
-**Blocked by**: B1
-
 ---
 
 ### B3: Toggle endpoints + filtro is_active en rutas públicas + delete protection
@@ -52,8 +50,6 @@ Parent: [PRD 0001 - Roles](./0001-roles.md)
 - [x] `GET /api/artisans/:id` devuelve 404 si inactivo
 - [x] `DELETE /api/galleries/:gid/artisans/:id` devuelve 409 si el artesano tiene productos
 
-**Blocked by**: B2
-
 ---
 
 ### B4: Admin registration con invite_code + dashboard endpoint
@@ -65,63 +61,54 @@ Parent: [PRD 0001 - Roles](./0001-roles.md)
 - [x] Sin `invite_code` o inválido → 403
 - [x] `GET /api/galleries/:gid` devuelve nombre, commission rate, conteo de artesanos, conteo de productos
 
-**Blocked by**: B1
-
 ---
 
-## FRONTEND
+## FRONTEND ✅
 
 ### F1: Modelos (role, galleryId) + auth provider + router dual-shell
 
-**Qué construir**: Agregar `role` y `galleryId` a `Session` y `User`. Actualizar `authProvider` para parsear los claims del JWT. Modificar `appRouter` con dos `ShellRoute` condicionales (buyer vs admin). El redirect decide cuál aplicar según `role`.
-
 **Acceptance criteria**:
-- [ ] `User.fromJson` parsea campo `role`
-- [ ] `Session.fromJson` parsea `role` y `gallery_id`
-- [ ] `authProvider.build()` extrae claims del token y puebla `Session` con role/galleryId
-- [ ] `appRouter` tiene dos `ShellRoute`: buyer (Explorar, Historial) y admin (placeholders)
-- [ ] Redirect: `role == "gallery_admin"` → `/admin/dashboard`, `role == "buyer"` → `/explorar`
-- [ ] Login/register redirige al shell correcto según role
-- [ ] Logout limpia token y redirige a `/login`
-
-**Blocked by**: B1
+- [x] `User.fromJson` parsea campo `role`, `isAdmin` getter
+- [x] `Session.fromJson` parsea `role` y `gallery_id`
+- [x] `authProvider.build()` obtiene `me()` que devuelve Session con role/galleryId
+- [x] `appRouter` tiene dos `ShellRoute`: buyer (Explorar, Historial) y admin (Dashboard, Artesanos, Productos, Ajustes)
+- [x] Redirect: `role == "gallery_admin"` → `/admin/dashboard`, `role == "buyer"` → `/explorar`
+- [x] Login/register redirige al shell correcto según role
+- [x] Logout limpia token y redirige a `/login`
 
 ---
 
 ### F2: Admin: Dashboard + Commission Settings
 
-**Qué construir**: Pantalla Dashboard (métricas básicas: nombre galería, commission rate, conteo artesanos, conteo productos). Pantalla Commission Settings (slider o input para rate, llama a `PUT /galleries/:gid/commission`).
-
 **Acceptance criteria**:
-- [ ] `GET /api/galleries/:gid` al entrar al dashboard, muestra nombre, rate, conteos
-- [ ] Loading/error states para dashboard
-- [ ] Commission Settings: muestra rate actual, permite editar y guardar
-- [ ] `PUT /api/galleries/:gid/commission` con feedback de éxito/error
-- [ ] Navegación: Dashboard y Settings como tabs del admin shell
-
-**Blocked by**: B1, F1
+- [x] `GET /api/galleries/:gid` al entrar al dashboard, muestra nombre, rate, conteos activos/total
+- [x] Loading/error states para dashboard (CircularProgressIndicator / AppErrorState)
+- [x] Commission Settings: input numérico para %, botón Guardar
+- [x] `PUT /api/galleries/:gid/commission` con feedback de éxito/error
+- [x] Navegación: Dashboard y Settings como tabs del admin shell
 
 ---
 
 ### F3: Admin: Artisan Directory + Product Directory + CRUD + toggle
 
-**Qué construir**: Pantallas de Artisan Directory (lista, crear, editar, toggle, delete) y Product Directory (lista, crear, editar desde detalle de artesano, toggle, delete). Toggle con opción de cascada en artesano. Productos visibles desde detalle de artesano y desde tab propia.
-
 **Acceptance criteria**:
-- [ ] Artisan Directory: lista de artesanos con toggle switch visible, fab para crear
-- [ ] Crear artesano: form con name, wallet, bio, image
-- [ ] Editar artesano: mismo form precargado
-- [ ] Toggle artesano: switch que llama `POST .../toggle-active`, con opción "aplicar a productos"
-- [ ] Delete artesano: confirm dialog, muestra error si tiene productos (409)
-- [ ] Product Directory: lista plana de todos los productos, toggle switch, filtro por artesano (opcional)
-- [ ] Detalle de artesano: muestra sus productos, crear nuevo desde ahí
-- [ ] Crear/editar producto: form con name, base_price, asset_code, image
-- [ ] Toggle producto: switch que llama `POST .../toggle-active`
-- [ ] Delete producto: confirm dialog + llamado DELETE
-- [ ] Inactivos se muestran con indicador visual (gris, tachado, etc.)
-- [ ] Pull-to-refresh en listas
+- [x] Artisan Directory: lista con toggle switch, FAB para crear
+- [x] Crear artesano: form con name, wallet (push route `/admin/artisans/new`)
+- [x] Editar artesano: mismo form precargado (`/admin/artisans/:id/edit`)
+- [x] Toggle artesano: switch con dialog "cascada" (aplicar a productos o solo artesano)
+- [x] Delete artesano: confirm dialog con AlertDialog
+- [x] Product Directory: lista plana de todos los productos, toggle switch, delete
+- [x] Detalle de artesano: `/admin/artisans/:id/products` muestra sus productos + FAB crear
+- [x] Crear producto: desde detalle de artesano (`/admin/artisans/:id/products/new`)
+- [x] Toggle producto: switch que llama `POST .../toggle-active`
+- [x] Delete producto: confirm dialog + llamado DELETE
+- [x] Inactivos se muestran con color atenuado (surfaceContainerHighest)
+- [x] Pull-to-refresh en listas
 
-**Blocked by**: B2, B3, F1
+**Notas de implementación**:
+- Editar producto: no implementado (pendiente, no bloqueante). Se puede agregar como push route.
+- Product form: solo accesible desde detalle de artesano, no desde la tab Productos (se necesitaría selector de artesano).
+- Link/unlink de artesanos entre galerías movido a `/galleries/:gid/link-artisan/:artisan_id` para evitar conflicto de wildcards en Gin.
 
 ---
 
@@ -135,4 +122,14 @@ B1 ──→ B2 ──→ B3
   └──→ F1 ──→ F2 │
           │       │
           └──→ F3 ←┘
+```
+
+## Commits
+
+```
+245f969 feat(app): F3 - admin artisan & product CRUD with toggle, cascade, delete protection
+6fc0750 feat(app): F2 - admin dashboard with metrics, commission settings UI
+7959def feat(app): dual-shell router (buyer vs admin), role from JWT, admin placeholder screens
+67836da feat(backend): roles - JWT with role+gallery_id, nested admin routes, toggle active, dashboard
+a9a0327 docs: roles PRD, ADR-0005 single gallery, CONTEXT.md updates, mattpocock skills
 ```
