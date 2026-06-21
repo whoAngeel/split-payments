@@ -12,6 +12,10 @@ type Config struct {
 	SplitterURL    string
 	SplitterAPIKey string
 	InviteCode     string
+	MinioEndpoint  string
+	MinioAccessKey string
+	MinioSecretKey string
+	MinioBucket    string
 }
 
 func Load() *Config {
@@ -23,5 +27,9 @@ func Load() *Config {
 		SplitterURL:    os.Getenv("SPLITTER_URL"),
 		SplitterAPIKey: os.Getenv("SPLITTER_API_KEY"),
 		InviteCode:     os.Getenv("INVITE_CODE"),
+		MinioEndpoint:  os.Getenv("MINIO_ENDPOINT"),
+		MinioAccessKey: os.Getenv("MINIO_ACCESS_KEY"),
+		MinioSecretKey: os.Getenv("MINIO_SECRET_KEY"),
+		MinioBucket:    os.Getenv("MINIO_BUCKET"),
 	}
 }

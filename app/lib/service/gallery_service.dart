@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
 import 'package:openpayments_app/models/admin_product.dart';
 import 'package:openpayments_app/models/artisan.dart';
 import 'package:openpayments_app/models/gallery_dashboard.dart';
@@ -12,6 +16,20 @@ class GalleryService {
   final AppLogger _logger;
 
   GalleryService(this._api, this._logger);
+
+  Future<Map<String, dynamic>> uploadImage(File file, {String prefix = 'uploads'}) async {
+    final uri = Uri.parse('${_api.baseUrl}/api/upload');
+    final request = http.MultipartRequest('POST', uri);
+    request.headers['Authorization'] = 'Bearer ${_api.token}';
+    request.fields['prefix'] = prefix;
+    request.files.add(await http.MultipartFile.fromPath('file', file.path));
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw ApiException(response.statusCode, response.body);
+  }
 
   Future<List<Product>> getProducts() async {
     final json = await _api.get('/api/explore/products');

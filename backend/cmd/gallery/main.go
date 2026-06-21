@@ -58,6 +58,11 @@ func main() {
 	checkoutSvc := service.NewCheckoutService(db, cfg.SplitterURL, cfg.SplitterAPIKey)
 	paymentSvc := service.NewPaymentService(db)
 
+	uploadSvc, err := service.NewUploadService(cfg.MinioEndpoint, cfg.MinioAccessKey, cfg.MinioSecretKey, cfg.MinioBucket)
+	if err != nil {
+		logger.Fatal("upload service", "err", err)
+	}
+
 	authHandler := handler.NewAuthHandler(authSvc)
 	galleryHandler := handler.NewGalleryHandler(gallerySvc, authSvc)
 	artisanHandler := handler.NewArtisanHandler(artisanSvc, gallerySvc)
@@ -65,6 +70,7 @@ func main() {
 	favoriteHandler := handler.NewFavoriteHandler(favoriteSvc)
 	checkoutHandler := handler.NewCheckoutHandler(checkoutSvc)
 	paymentHandler := handler.NewPaymentHandler(paymentSvc)
+	uploadHandler := handler.NewUploadHandler(uploadSvc)
 
 	router := gin.New()
 	router.Use(logging.GinMiddleware(logger))
@@ -98,6 +104,7 @@ func main() {
 		protected.POST("/checkout/save", paymentHandler.Save)
 		protected.POST("/checkout/complete", paymentHandler.Complete)
 		protected.GET("/payments", paymentHandler.List)
+		protected.POST("/upload", uploadHandler.Upload)
 	}
 
 	// Admin routes (auth + gallery ownership required)

@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:openpayments_app/providers/admin_crud_provider.dart';
+import 'package:openpayments_app/providers/api_client_provider.dart';
 
 class AdminArtisanFormScreen extends ConsumerStatefulWidget {
   final int? artisanId;
@@ -21,6 +25,7 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
   final _craftTypeController = TextEditingController();
   final _tagsController = TextEditingController();
   bool _saving = false;
+  bool _uploading = false;
   String? _error;
   bool get _isEdit => widget.artisanId != null;
 
@@ -56,6 +61,23 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
     _craftTypeController.dispose();
     _tagsController.dispose();
     super.dispose();
+  }
+
+  Future<void> _uploadImage() async {
+    final picker = ImagePicker();
+    final xfile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (xfile == null) return;
+
+    setState(() => _uploading = true);
+    try {
+      final service = ref.read(galleryServiceProvider);
+      final result = await service.uploadImage(File(xfile.path), prefix: 'artisans');
+      _imageController.text = result['medium_url'] as String? ?? '';
+    } catch (e) {
+      setState(() => _error = 'Error al subir imagen: $e');
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
   }
 
   Future<void> _save() async {
@@ -108,7 +130,24 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
           const SizedBox(height: 12),
           _buildField('Wallet Address URL *', _walletController),
           const SizedBox(height: 12),
-          _buildField('Imagen URL', _imageController),
+          // Image URL with upload button
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildField('Imagen URL', _imageController)),
+              const SizedBox(width: 8),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: IconButton.filled(
+                  onPressed: _uploading ? null : _uploadImage,
+                  icon: _uploading
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.cloud_upload_outlined),
+                  tooltip: 'Subir imagen',
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           _buildField('Ubicación (ej: Oaxaca, México)', _locationController),
           const SizedBox(height: 12),

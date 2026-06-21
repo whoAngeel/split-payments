@@ -28,6 +28,8 @@ class ApiClient {
        _logger = logger;
 
   set token(String? value) => _token = value;
+  String? get token => _token;
+  String get baseUrl => baseURL;
 
   Map<String, String> get _headers => {
     'Content-Type': 'application/json',
