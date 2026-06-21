@@ -93,3 +93,6 @@ func (s *UploadService) Upload(ctx context.Context, reader io.Reader, filename, 
 		MediumURL:    "/" + s.bucket + "/" + mediumKey,
 	}, nil
 }
+
+func (s *UploadService) MinioClient() *minio.Client { return s.client }
+func (s *UploadService) MinioBucket() string         { return s.bucket }

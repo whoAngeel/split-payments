@@ -27,6 +27,7 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
   bool _saving = false;
   bool _uploading = false;
   String? _error;
+  String? _previewUrl;
   bool get _isEdit => widget.artisanId != null;
 
   @override
@@ -47,6 +48,7 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
       _specialtyController.text = artisan.specialty;
       _craftTypeController.text = artisan.craftType;
       _tagsController.text = artisan.tags;
+      if (artisan.imageUrl.isNotEmpty) _previewUrl = artisan.imageUrl;
     }
   }
 
@@ -93,7 +95,9 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
     try {
       final service = ref.read(galleryServiceProvider);
       final result = await service.uploadImage(File(xfile.path), prefix: 'artisans');
-      _imageController.text = result['medium_url'] as String? ?? '';
+      final url = result['medium_url'] as String? ?? '';
+      _imageController.text = url;
+      setState(() => _previewUrl = url);
     } catch (e) {
       setState(() => _error = 'Error al subir imagen: $e');
     } finally {
@@ -125,7 +129,15 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
         tags: _tagsController.text.trim(),
       );
     } else {
-      await ref.read(artisansProvider.notifier).create(name, wallet);
+      await ref.read(artisansProvider.notifier).create(
+        name, wallet,
+        imageUrl: _imageController.text.trim(),
+        bio: _bioController.text.trim(),
+        location: _locationController.text.trim(),
+        specialty: _specialtyController.text.trim(),
+        craftType: _craftTypeController.text.trim(),
+        tags: _tagsController.text.trim(),
+      );
     }
 
     if (mounted) {
@@ -151,25 +163,6 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
           const SizedBox(height: 12),
           _buildField('Wallet Address URL *', _walletController),
           const SizedBox(height: 12),
-          // Image URL with upload button
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: _buildField('Imagen URL', _imageController)),
-              const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: IconButton.filled(
-                  onPressed: _uploading ? null : _uploadImage,
-                  icon: _uploading
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.cloud_upload_outlined),
-                  tooltip: 'Subir imagen',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
           _buildField('Ubicación (ej: Oaxaca, México)', _locationController),
           const SizedBox(height: 12),
           _buildField('Especialidad (ej: Textiles, Cerámica)', _specialtyController),
@@ -179,6 +172,16 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
           _buildField('Biografía', _bioController, maxLines: 3),
           const SizedBox(height: 12),
           _buildField('Tags (separados por coma)', _tagsController),
+          const SizedBox(height: 24),
+
+          // Image preview + upload
+          _ImagePreview(
+            url: _previewUrl,
+            baseUrl: ref.read(apiClientProvider).baseUrl,
+            uploading: _uploading,
+            onUpload: _uploadImage,
+          ),
+
           if (_error != null) ...[
             const SizedBox(height: 12),
             Text(_error!, style: TextStyle(color: cs.error)),
@@ -205,6 +208,68 @@ class _AdminArtisanFormScreenState extends ConsumerState<AdminArtisanFormScreen>
         border: const OutlineInputBorder(),
       ),
       enabled: !_saving,
+    );
+  }
+}
+
+class _ImagePreview extends StatelessWidget {
+  final String? url;
+  final String baseUrl;
+  final bool uploading;
+  final VoidCallback onUpload;
+
+  const _ImagePreview({this.url, required this.baseUrl, required this.uploading, required this.onUpload});
+
+  String? get _fullUrl => url != null && url!.isNotEmpty ? '$baseUrl$url' : null;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          height: 200,
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: cs.outlineVariant),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: uploading
+              ? const Center(child: CircularProgressIndicator())
+              : url != null && url!.isNotEmpty
+                  ? Image.network(_fullUrl!, fit: BoxFit.cover, width: double.infinity,
+                      errorBuilder: (_, __, ___) => Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.broken_image_outlined, size: 48, color: cs.onSurfaceVariant),
+                            const SizedBox(height: 8),
+                            Text('Error al cargar', style: TextStyle(color: cs.onSurfaceVariant)),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.image_outlined, size: 48, color: cs.onSurfaceVariant),
+                          const SizedBox(height: 8),
+                          Text('Sin imagen', style: TextStyle(color: cs.onSurfaceVariant)),
+                        ],
+                      ),
+                    ),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: uploading ? null : onUpload,
+          icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+          label: Text(url != null && url!.isNotEmpty ? 'Cambiar imagen' : 'Subir imagen'),
+        ),
+      ],
     );
   }
 }

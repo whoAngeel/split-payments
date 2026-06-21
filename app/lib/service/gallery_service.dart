@@ -75,12 +75,18 @@ class GalleryService {
         .toList();
   }
 
-  Future<Artisan> createArtisan(int galleryId, String name, String walletAddressUrl) async {
+  Future<Artisan> createArtisan(int galleryId, String name, String walletAddressUrl, {String imageUrl = '', String bio = '', String location = '', String specialty = '', String craftType = '', String tags = ''}) async {
     final json = await _api.post(
       '/api/galleries/$galleryId/artisans',
       body: {
         'name': name,
         'wallet_address_url': walletAddressUrl,
+        if (imageUrl.isNotEmpty) 'image_url': imageUrl,
+        if (bio.isNotEmpty) 'bio': bio,
+        if (location.isNotEmpty) 'location': location,
+        if (specialty.isNotEmpty) 'specialty': specialty,
+        if (craftType.isNotEmpty) 'craft_type': craftType,
+        if (tags.isNotEmpty) 'tags': tags,
       },
     );
     return Artisan.fromJson(json as Map<String, dynamic>);

@@ -71,6 +71,7 @@ func main() {
 	checkoutHandler := handler.NewCheckoutHandler(checkoutSvc)
 	paymentHandler := handler.NewPaymentHandler(paymentSvc)
 	uploadHandler := handler.NewUploadHandler(uploadSvc)
+	imageProxy := handler.NewImageProxyHandler(uploadSvc.MinioClient(), uploadSvc.MinioBucket())
 
 	router := gin.New()
 	router.Use(logging.GinMiddleware(logger))
@@ -78,6 +79,9 @@ func main() {
 
 	// Health
 	router.GET("/health", handler.Health)
+
+	// Image proxy (public)
+	router.GET("/products/*filepath", imageProxy.Serve)
 
 	// Public auth
 	auth := router.Group("/api/auth")
