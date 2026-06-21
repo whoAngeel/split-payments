@@ -32,7 +32,7 @@ func main() {
 		logger.Fatal("op client", "err", err)
 	}
 
-	paymentService := service.NewPaymentService(opClient, logger)
+	paymentService := service.NewPaymentService(opClient, logger, cfg.PublicURL)
 
 	healthHandler := handler.NewHealthHandler(logger)
 	splitHandler := handler.NewSplitHandler(logger, paymentService)

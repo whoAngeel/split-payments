@@ -33,6 +33,7 @@ type sessionData struct {
 type PaymentService struct {
 	client     *op.AuthenticatedClient
 	log        *log.Logger
+	publicURL  string
 	sessions   map[string]*sessionData
 	sessionsMu sync.RWMutex
 }
@@ -44,11 +45,12 @@ type OutgoingGrantResult struct {
 	ContinueToken string `json:"-"`
 }
 
-func NewPaymentService(client *op.AuthenticatedClient, logger *log.Logger) *PaymentService {
+func NewPaymentService(client *op.AuthenticatedClient, logger *log.Logger, publicURL string) *PaymentService {
 	return &PaymentService{
-		client:   client,
-		log:      logger,
-		sessions: make(map[string]*sessionData),
+		client:    client,
+		log:       logger,
+		publicURL: publicURL,
+		sessions:  make(map[string]*sessionData),
 	}
 }
 
@@ -213,7 +215,7 @@ func (s *PaymentService) RequestOutgoingPaymentGrant(
 		Access: []as.AccessItem{accessItem},
 	}
 
-	callbackURL := fmt.Sprintf("http://localhost:4001/split/callback?session=%s", sessionID)
+	callbackURL := fmt.Sprintf("%s/split/callback?session=%s", s.publicURL, sessionID)
 
 	interact := &as.InteractRequest{
 		Start: []as.InteractRequestStart{as.InteractRequestStartRedirect},
@@ -431,7 +433,7 @@ func (s *PaymentService) InitiateSplit(ctx context.Context, senderWalletURL stri
 		Access: []as.AccessItem{accessItem},
 	}
 
-	callbackURL := fmt.Sprintf("http://localhost:4001/split/callback?session=%s", sessionID)
+	callbackURL := fmt.Sprintf("%s/split/callback?session=%s", s.publicURL, sessionID)
 
 	interact := &as.InteractRequest{
 		Start: []as.InteractRequestStart{as.InteractRequestStartRedirect},
