@@ -93,6 +93,13 @@ func (s *AuthService) GetUser(id uint) (*model.User, error) {
 	return &user, nil
 }
 
+func (s *AuthService) UpdateUser(user *model.User) error {
+	if err := s.db.Save(user).Error; err != nil {
+		return fmt.Errorf("updating user: %w", err)
+	}
+	return nil
+}
+
 func (s *AuthService) Login(email, password string) (*model.User, string, error) {
 	var user model.User
 	if err := s.db.Where("email = ?", email).First(&user).Error; err != nil {

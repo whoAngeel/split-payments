@@ -101,6 +101,7 @@ func main() {
 	protected.Use(middleware.AuthRequired(authSvc))
 	{
 		protected.GET("/auth/me", authHandler.Me)
+		protected.PATCH("/auth/me", authHandler.UpdateMe)
 		protected.POST("/galleries", galleryHandler.Create)
 		protected.GET("/galleries", galleryHandler.List)
 		protected.POST("/favorites/:product_id", favoriteHandler.Toggle)

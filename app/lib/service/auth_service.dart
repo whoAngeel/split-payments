@@ -45,6 +45,17 @@ class AuthService {
     );
   }
 
+  Future<User> updateMe({String? name, String? walletAddressUrl}) async {
+    final json = await _api.patch(
+      '/api/auth/me',
+      body: {
+        if (name != null && name.isNotEmpty) 'name': name,
+        if (walletAddressUrl != null) 'wallet_address_url': walletAddressUrl,
+      },
+    );
+    return User.fromJson(json as Map<String, dynamic>);
+  }
+
   String? _normalizeWallet(String? wallet) {
     if (wallet == null || wallet.trim().isEmpty) return null;
     final w = wallet.trim();

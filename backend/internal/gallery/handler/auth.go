@@ -88,3 +88,36 @@ func (h *AuthHandler) Me(c *gin.Context) {
 		"gallery_id": galleryID,
 	})
 }
+
+type updateMeRequest struct {
+	Name             string `json:"name"`
+	WalletAddressURL string `json:"wallet_address_url"`
+}
+
+func (h *AuthHandler) UpdateMe(c *gin.Context) {
+	userID := c.GetUint("userID")
+
+	var req updateMeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := h.svc.GetUser(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
+	if req.Name != "" {
+		user.Name = req.Name
+	}
+	user.WalletAddressURL = req.WalletAddressURL
+
+	if err := h.svc.UpdateUser(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}

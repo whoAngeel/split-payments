@@ -76,4 +76,8 @@ class AuthNotifier extends AsyncNotifier<Session?> {
     await const FlutterSecureStorage().delete(key: 'token');
     state = const AsyncData(null);
   }
+
+  void updateSession(Session session) {
+    state = AsyncData(session);
+  }
 }
