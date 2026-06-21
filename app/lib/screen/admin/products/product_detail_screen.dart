@@ -114,7 +114,10 @@ class _AdminProductDetailScreenState extends ConsumerState<AdminProductDetailScr
 
     return Scaffold(
       appBar: AppBar(title: Text(p.name), actions: [
-        IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => context.push('/admin/products/${widget.productId}/edit')),
+        IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () async {
+          await context.push('/admin/products/${widget.productId}/edit');
+          _load();
+        }),
         IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red), onPressed: _deleteProduct),
       ]),
       body: ListView(

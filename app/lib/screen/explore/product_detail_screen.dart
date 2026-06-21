@@ -8,6 +8,7 @@ import '../../models/product.dart';
 import '../../models/product_detail.dart';
 import '../../providers/gallery_provider.dart';
 import '../../providers/checkout_provider.dart';
+import '../../providers/api_client_provider.dart';
 
 class ProductDetailScreen extends ConsumerWidget {
   final int productId;
@@ -72,6 +73,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final price = detail.basePrice / pow(10, detail.assetScale);
+    final baseUrl = ref.read(apiClientProvider).baseUrl;
     final allImages = [detail.imageUrl, ...detail.images];
 
     return Scaffold(
@@ -94,6 +96,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
                 controller: _pageController,
                 onPageChanged: (i) => setState(() => _pageIndex = i),
                 cs: cs,
+                baseUrl: baseUrl,
               ),
             ),
           ),
@@ -199,6 +202,7 @@ class _ImageGallery extends StatelessWidget {
   final PageController controller;
   final ValueChanged<int> onPageChanged;
   final ColorScheme cs;
+  final String baseUrl;
 
   const _ImageGallery({
     required this.images,
@@ -206,6 +210,7 @@ class _ImageGallery extends StatelessWidget {
     required this.controller,
     required this.onPageChanged,
     required this.cs,
+    this.baseUrl = '',
   });
 
   @override
@@ -220,7 +225,7 @@ class _ImageGallery extends StatelessWidget {
           itemBuilder: (context, index) {
             return images[index].isNotEmpty
                 ? Image.network(
-                    images[index],
+                    images[index].startsWith('http') ? images[index] : '$baseUrl${images[index]}',
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => _placeholder(),
                   )

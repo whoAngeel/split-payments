@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/product.dart';
 import '../../providers/gallery_provider.dart';
+import '../../providers/api_client_provider.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/app_chip.dart';
 
@@ -216,6 +217,7 @@ class _ExploreContentState extends ConsumerState<_ExploreContent> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: ProductCard(
                       product: product,
+                      baseUrl: ref.read(apiClientProvider).baseUrl,
                   onBuy: () {
                     context.push('/product/${product.id}');
                   },
