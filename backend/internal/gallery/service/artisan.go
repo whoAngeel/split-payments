@@ -68,13 +68,27 @@ func (s *ArtisanService) Update(id uint, name, walletAddressURL, imageURL, bio, 
 	if name != "" {
 		artisan.Name = name
 	}
-	artisan.WalletAddressURL = walletAddressURL
-	artisan.ImageURL = imageURL
-	artisan.Bio = bio
-	artisan.Location = location
-	artisan.Specialty = specialty
-	artisan.CraftType = craftType
-	artisan.Tags = tags
+	if walletAddressURL != "" {
+		artisan.WalletAddressURL = walletAddressURL
+	}
+	if imageURL != "" {
+		artisan.ImageURL = imageURL
+	}
+	if bio != "" {
+		artisan.Bio = bio
+	}
+	if location != "" {
+		artisan.Location = location
+	}
+	if specialty != "" {
+		artisan.Specialty = specialty
+	}
+	if craftType != "" {
+		artisan.CraftType = craftType
+	}
+	if tags != "" {
+		artisan.Tags = tags
+	}
 
 	if err := s.db.Save(&artisan).Error; err != nil {
 		return nil, fmt.Errorf("updating artisan: %w", err)

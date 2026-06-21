@@ -105,14 +105,14 @@ class GalleryService {
     final json = await _api.patch(
       '/api/galleries/$galleryId/artisans/$artisanId',
       body: {
-        if (name != null) 'name': name,
-        if (walletAddressUrl != null) 'wallet_address_url': walletAddressUrl,
-        if (imageUrl != null) 'image_url': imageUrl,
-        if (bio != null) 'bio': bio,
-        if (location != null) 'location': location,
-        if (specialty != null) 'specialty': specialty,
-        if (craftType != null) 'craft_type': craftType,
-        if (tags != null) 'tags': tags,
+        if (name != null && name.isNotEmpty) 'name': name,
+        if (walletAddressUrl != null && walletAddressUrl.isNotEmpty) 'wallet_address_url': walletAddressUrl,
+        if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
+        if (bio != null && bio.isNotEmpty) 'bio': bio,
+        if (location != null && location.isNotEmpty) 'location': location,
+        if (specialty != null && specialty.isNotEmpty) 'specialty': specialty,
+        if (craftType != null && craftType.isNotEmpty) 'craft_type': craftType,
+        if (tags != null && tags.isNotEmpty) 'tags': tags,
       },
     );
     return Artisan.fromJson(json as Map<String, dynamic>);
