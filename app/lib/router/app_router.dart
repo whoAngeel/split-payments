@@ -1,32 +1,39 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:openpayments_app/models/session.dart';
 import 'package:openpayments_app/providers/auth_provider.dart';
-import 'package:openpayments_app/screen/account_screen.dart';
-import 'package:openpayments_app/screen/admin_artisans_screen.dart';
-import 'package:openpayments_app/screen/admin_artisan_form_screen.dart';
-import 'package:openpayments_app/screen/admin_artisan_products_screen.dart';
-import 'package:openpayments_app/screen/admin_dashboard_screen.dart';
-import 'package:openpayments_app/screen/admin_products_screen.dart';
-import 'package:openpayments_app/screen/admin_settings_screen.dart';
-import 'package:openpayments_app/screen/checkout_screen.dart';
+import 'package:openpayments_app/screen/account/account_screen.dart';
+import 'package:openpayments_app/screen/admin/artisans/artisans_screen.dart';
+import 'package:openpayments_app/screen/admin/artisans/artisan_form_screen.dart';
+import 'package:openpayments_app/screen/admin/artisans/artisan_products_screen.dart';
+import 'package:openpayments_app/screen/admin/dashboard/dashboard_screen.dart';
+import 'package:openpayments_app/screen/admin/products/products_screen.dart';
+import 'package:openpayments_app/screen/admin/settings/settings_screen.dart';
+import 'package:openpayments_app/screen/checkout/checkout_screen.dart';
 import 'package:openpayments_app/screen/home_screen.dart';
-import 'package:openpayments_app/screen/login_screen.dart';
-import 'package:openpayments_app/screen/register_screen.dart';
-import 'package:openpayments_app/screen/orders_screen.dart';
-import 'package:openpayments_app/screen/explore_screen.dart';
-import 'package:openpayments_app/screen/product_detail_screen.dart';
-import 'package:openpayments_app/screen/payment_confirmation_screen.dart';
+import 'package:openpayments_app/screen/auth/login_screen.dart';
+import 'package:openpayments_app/screen/auth/register_screen.dart';
+import 'package:openpayments_app/screen/orders/orders_screen.dart';
+import 'package:openpayments_app/screen/explore/explore_screen.dart';
+import 'package:openpayments_app/screen/explore/product_detail_screen.dart';
+import 'package:openpayments_app/screen/payment/payment_confirmation_screen.dart';
 import 'package:openpayments_app/widgets/admin_shell.dart';
 import 'package:openpayments_app/widgets/app_shell.dart';
 
+final sessionNotifier = ValueNotifier<Session?>(null);
+
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  ref.listen(authProvider, (_, next) {
+    sessionNotifier.value = next.valueOrNull;
+  });
+
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/login',
+    refreshListenable: sessionNotifier,
     redirect: (context, state) {
       final location = state.matchedLocation;
 
-      // Catch raw deep link before go_router fails
       if (location.startsWith('openpayments://')) {
         final uri = Uri.parse(location);
         final sessionId = uri.queryParameters['session_id'] ?? '';
@@ -34,12 +41,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return '/payment/complete?session_id=$sessionId&status=$status';
       }
 
-      // Show loading while auth resolves
-      if (authState.isLoading) {
-        return location == '/' ? null : '/';
-      }
+      final session = sessionNotifier.value;
+      final isLoading = session == null && ref.read(authProvider).isLoading;
 
-      final session = authState.valueOrNull;
+      if (isLoading) return null;
+
       final isLoggedIn = session != null;
       final isAdmin = session?.isAdmin ?? false;
       final isLoginRoute =
@@ -51,7 +57,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return isAdmin ? '/admin/dashboard' : '/explorar';
       }
 
-      // Redirect from buyer shell to admin shell and vice versa
       final isOnAdminRoute = state.matchedLocation.startsWith('/admin');
       if (isAdmin && !isOnAdminRoute && !isLoginRoute) {
         return '/admin/dashboard';
@@ -113,7 +118,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // Overlay routes (push, not shell)
       GoRoute(
         path: '/account',
         name: 'account',
