@@ -76,19 +76,19 @@ class AdminProductsNotifier extends AsyncNotifier<List<AdminProduct>> {
     state = await AsyncValue.guard(() => ref.read(galleryServiceProvider).getAdminProducts(_galleryId));
   }
 
-  Future<void> create(int artisanId, String name, int basePrice, String assetCode, {int assetScale = 2, String imageUrl = '', int commissionRate = 0}) async {
+  Future<void> create(int artisanId, String name, int basePrice, String assetCode, {int assetScale = 2, String imageUrl = '', int commissionRate = 0, String description = '', String materials = '', String dimensions = '', String tags = ''}) async {
     final service = ref.read(galleryServiceProvider);
     state = await AsyncValue.guard(() async {
-      await service.createProduct(_galleryId, artisanId, name: name, basePrice: basePrice, assetCode: assetCode, assetScale: assetScale, imageUrl: imageUrl, commissionRate: commissionRate);
+      await service.createProduct(_galleryId, artisanId, name: name, basePrice: basePrice, assetCode: assetCode, assetScale: assetScale, imageUrl: imageUrl, commissionRate: commissionRate, description: description, materials: materials, dimensions: dimensions, tags: tags);
       return service.getAdminProducts(_galleryId);
     });
     ref.invalidate(dashboardProvider);
   }
 
-  Future<void> updateProduct(int productId, {String? name, int? basePrice, String? imageUrl, int? commissionRate}) async {
+  Future<void> updateProduct(int productId, {String? name, int? basePrice, String? imageUrl, int? commissionRate, String? description, String? materials, String? dimensions, String? tags}) async {
     final service = ref.read(galleryServiceProvider);
     state = await AsyncValue.guard(() async {
-      await service.updateProduct(_galleryId, productId, name: name, basePrice: basePrice, imageUrl: imageUrl, commissionRate: commissionRate);
+      await service.updateProduct(_galleryId, productId, name: name, basePrice: basePrice, imageUrl: imageUrl, commissionRate: commissionRate, description: description, materials: materials, dimensions: dimensions, tags: tags);
       return service.getAdminProducts(_galleryId);
     });
   }

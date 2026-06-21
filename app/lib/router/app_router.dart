@@ -9,6 +9,8 @@ import 'package:openpayments_app/screen/admin/artisans/artisan_form_screen.dart'
 import 'package:openpayments_app/screen/admin/artisans/artisan_products_screen.dart';
 import 'package:openpayments_app/screen/admin/dashboard/dashboard_screen.dart';
 import 'package:openpayments_app/screen/admin/products/products_screen.dart';
+import 'package:openpayments_app/screen/admin/products/product_form_screen.dart';
+import 'package:openpayments_app/screen/admin/products/product_detail_screen.dart';
 import 'package:openpayments_app/screen/admin/settings/settings_screen.dart';
 import 'package:openpayments_app/screen/checkout/checkout_screen.dart';
 import 'package:openpayments_app/screen/home_screen.dart';
@@ -158,6 +160,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final id = int.parse(state.pathParameters['id']!);
           final name = state.extra as String? ?? '';
           return AdminArtisanProductsScreen(artisanId: id, artisanName: name);
+        },
+      ),
+      GoRoute(
+        path: '/admin/artisans/:id/products/new',
+        name: 'admin-product-new',
+        builder: (context, state) {
+          final artisanId = int.parse(state.pathParameters['id']!);
+          return ProductFormScreen(artisanId: artisanId);
+        },
+      ),
+      GoRoute(
+        path: '/admin/products/:id',
+        name: 'admin-product-detail',
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return AdminProductDetailScreen(productId: id);
+        },
+      ),
+      GoRoute(
+        path: '/admin/products/:id/edit',
+        name: 'admin-product-edit',
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return ProductFormScreen(artisanId: 0, productId: id);
         },
       ),
 

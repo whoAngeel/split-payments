@@ -160,6 +160,10 @@ class GalleryService {
     int assetScale = 2,
     String imageUrl = '',
     int commissionRate = 0,
+    String description = '',
+    String materials = '',
+    String dimensions = '',
+    String tags = '',
   }) async {
     final json = await _api.post(
       '/api/galleries/$galleryId/artisans/$artisanId/products',
@@ -170,6 +174,10 @@ class GalleryService {
         'asset_scale': assetScale,
         'image_url': imageUrl,
         'commission_rate': commissionRate,
+        if (description.isNotEmpty) 'description': description,
+        if (materials.isNotEmpty) 'materials': materials,
+        if (dimensions.isNotEmpty) 'dimensions': dimensions,
+        if (tags.isNotEmpty) 'tags': tags,
       },
     );
     return AdminProduct.fromJson(json as Map<String, dynamic>);
@@ -180,17 +188,47 @@ class GalleryService {
     int? basePrice,
     String? imageUrl,
     int? commissionRate,
+    String? description,
+    String? materials,
+    String? dimensions,
+    String? tags,
   }) async {
     final json = await _api.patch(
       '/api/galleries/$galleryId/products/$productId',
       body: {
-        if (name != null) 'name': name,
-        if (basePrice != null) 'base_price': basePrice,
-        if (imageUrl != null) 'image_url': imageUrl,
-        if (commissionRate != null) 'commission_rate': commissionRate,
+        if (name != null && name.isNotEmpty) 'name': name,
+        if (basePrice != null && basePrice > 0) 'base_price': basePrice,
+        if (imageUrl != null && imageUrl.isNotEmpty) 'image_url': imageUrl,
+        if (commissionRate != null && commissionRate >= 0) 'commission_rate': commissionRate,
+        if (description != null && description.isNotEmpty) 'description': description,
+        if (materials != null && materials.isNotEmpty) 'materials': materials,
+        if (dimensions != null && dimensions.isNotEmpty) 'dimensions': dimensions,
+        if (tags != null && tags.isNotEmpty) 'tags': tags,
       },
     );
     return AdminProduct.fromJson(json as Map<String, dynamic>);
+  }
+
+  Future<AdminProduct> getAdminProductDetail(int galleryId, int productId) async {
+    final json = await _api.get('/api/galleries/$galleryId/products/$productId');
+    return AdminProduct.fromDetailJson(json as Map<String, dynamic>);
+  }
+
+  Future<List<Map<String, dynamic>>> getProductImages(int galleryId, int productId) async {
+    final json = await _api.get('/api/galleries/$galleryId/products/$productId/images');
+    return (json as List<dynamic>).cast<Map<String, dynamic>>();
+  }
+
+  Future<Map<String, dynamic>> addProductImage(int galleryId, int productId, String imageUrl) async {
+    final json = await _api.post(
+      '/api/galleries/$galleryId/products/$productId/images',
+      body: {'image_url': imageUrl},
+    );
+    return json as Map<String, dynamic>;
+  }
+
+  Future<void> deleteProductImage(int galleryId, int productId, int imageId) async {
+    await _api.delete('/api/galleries/$galleryId/products/$productId/images/$imageId');
   }
 
   Future<void> deleteProduct(int galleryId, int productId) async {

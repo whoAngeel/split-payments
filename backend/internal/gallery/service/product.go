@@ -16,7 +16,7 @@ func NewProductService(db *gorm.DB) *ProductService {
 	return &ProductService{db: db}
 }
 
-func (s *ProductService) Create(artisanID uint, name, assetCode string, basePrice int64, assetScale int, commissionRate int, imageURL string) (*model.Product, error) {
+func (s *ProductService) Create(artisanID uint, name, assetCode string, basePrice int64, assetScale int, commissionRate int, imageURL, description, materials, dimensions, tags string) (*model.Product, error) {
 	product := model.Product{
 		ArtisanID:      artisanID,
 		Name:           name,
@@ -26,9 +26,30 @@ func (s *ProductService) Create(artisanID uint, name, assetCode string, basePric
 		ImageURL:       imageURL,
 		CommissionRate: commissionRate,
 	}
+	if assetCode == "" {
+		product.AssetCode = "USD"
+	}
+	if assetScale == 0 {
+		product.AssetScale = 2
+	}
+
 	if err := s.db.Create(&product).Error; err != nil {
 		return nil, fmt.Errorf("creating product: %w", err)
 	}
+
+	if description != "" || materials != "" || dimensions != "" || tags != "" {
+		detail := model.ProductDetail{
+			ProductID:   product.ID,
+			Description: description,
+			Materials:   materials,
+			Dimensions:  dimensions,
+			Tags:        tags,
+		}
+		if err := s.db.Create(&detail).Error; err != nil {
+			return nil, fmt.Errorf("creating product detail: %w", err)
+		}
+	}
+
 	return &product, nil
 }
 
@@ -68,7 +89,7 @@ func (s *ProductService) Delete(productID uint) error {
 	return nil
 }
 
-func (s *ProductService) Update(productID uint, name, imageURL string, basePrice int64, commissionRate int) (*model.Product, error) {
+func (s *ProductService) Update(productID uint, name, imageURL string, basePrice int64, commissionRate int, description, materials, dimensions, tags string) (*model.Product, error) {
 	var product model.Product
 	if err := s.db.First(&product, productID).Error; err != nil {
 		return nil, fmt.Errorf("product not found")
@@ -90,6 +111,26 @@ func (s *ProductService) Update(productID uint, name, imageURL string, basePrice
 	if err := s.db.Save(&product).Error; err != nil {
 		return nil, fmt.Errorf("updating product: %w", err)
 	}
+
+	if description != "" || materials != "" || dimensions != "" || tags != "" {
+		var detail model.ProductDetail
+		result := s.db.Where("product_id = ?", productID).First(&detail)
+		detail.ProductID = productID
+		detail.Description = description
+		detail.Materials = materials
+		detail.Dimensions = dimensions
+		detail.Tags = tags
+		if result.Error != nil {
+			if err := s.db.Create(&detail).Error; err != nil {
+				return nil, fmt.Errorf("creating product detail: %w", err)
+			}
+		} else {
+			if err := s.db.Save(&detail).Error; err != nil {
+				return nil, fmt.Errorf("updating product detail: %w", err)
+			}
+		}
+	}
+
 	return &product, nil
 }
 
@@ -159,19 +200,21 @@ func (s *ProductService) ListAllExplore() ([]ExploreProduct, error) {
 }
 
 type ProductDetailResponse struct {
-	ID          uint            `json:"id"`
-	Name        string          `json:"name"`
-	BasePrice   int64           `json:"base_price"`
-	AssetCode   string          `json:"asset_code"`
-	AssetScale  int             `json:"asset_scale"`
-	ImageURL    string          `json:"image_url"`
-	Description string          `json:"description"`
-	Materials   string          `json:"materials"`
-	Dimensions  string          `json:"dimensions"`
-	Tags        []string        `json:"tags"`
-	Images      []string        `json:"images"`
-	Artisan     ArtisanResponse `json:"artisan"`
-	Split       *ProductSplit   `json:"split"`
+	ID              uint            `json:"id"`
+	Name            string          `json:"name"`
+	BasePrice       int64           `json:"base_price"`
+	AssetCode       string          `json:"asset_code"`
+	AssetScale      int             `json:"asset_scale"`
+	ImageURL        string          `json:"image_url"`
+	Description     string          `json:"description"`
+	Materials       string          `json:"materials"`
+	Dimensions      string          `json:"dimensions"`
+	Tags            []string        `json:"tags"`
+	Images          []string        `json:"images"`
+	Artisan         ArtisanResponse `json:"artisan"`
+	Split           *ProductSplit   `json:"split"`
+	IsActive        bool            `json:"is_active"`
+	ArtisanIsActive bool            `json:"artisan_is_active"`
 }
 type ArtisanResponse struct {
 	ID               uint   `json:"id"`
@@ -182,12 +225,32 @@ type ArtisanResponse struct {
 }
 
 func (s *ProductService) GetDetail(productID uint) (*ProductDetailResponse, error) {
+	resp, err := s.getDetail(productID)
+	if err != nil {
+		return nil, err
+	}
+	if !resp.IsActive || !resp.ArtisanIsActive {
+		return nil, fmt.Errorf("product not found")
+	}
+	return resp, nil
+}
+
+func (s *ProductService) GetDetailAdmin(productID uint) (*ProductDetailResponse, error) {
+	return s.getDetail(productID)
+}
+
+type productDetailData struct {
+	Product         model.Product
+	Detail          model.ProductDetail
+	Images          []string
+	IsActive        bool
+	ArtisanIsActive bool
+}
+
+func (s *ProductService) getDetail(productID uint) (*ProductDetailResponse, error) {
 	var product model.Product
 	if err := s.db.Preload("Artisan").First(&product, productID).Error; err != nil {
 		return nil, fmt.Errorf("product not found: %w", err)
-	}
-	if !product.IsActive || !product.Artisan.IsActive {
-		return nil, fmt.Errorf("product not found")
 	}
 	var detail model.ProductDetail
 	if err := s.db.Where("product_id = ?", productID).First(&detail).Error; err != nil {
@@ -214,6 +277,7 @@ func (s *ProductService) GetDetail(productID uint) (*ProductDetailResponse, erro
 		Dimensions:  detail.Dimensions,
 		Tags:        tags,
 		Images:      imageURLs,
+		IsActive:    product.IsActive,
 		Artisan: ArtisanResponse{
 			ID:               product.Artisan.ID,
 			Name:             product.Artisan.Name,
@@ -221,6 +285,7 @@ func (s *ProductService) GetDetail(productID uint) (*ProductDetailResponse, erro
 			Bio:              product.Artisan.Bio,
 			WalletAddressURL: product.Artisan.WalletAddressURL,
 		},
+		ArtisanIsActive: product.Artisan.IsActive,
 	}
 	if product.CommissionRate > 0 {
 		galleryPct := product.CommissionRate / 100

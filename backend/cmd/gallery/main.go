@@ -72,6 +72,7 @@ func main() {
 	paymentHandler := handler.NewPaymentHandler(paymentSvc)
 	uploadHandler := handler.NewUploadHandler(uploadSvc)
 	imageProxy := handler.NewImageProxyHandler(uploadSvc.MinioClient(), uploadSvc.MinioBucket())
+	productImageHandler := handler.NewProductImageHandler(db)
 
 	router := gin.New()
 	router.Use(logging.GinMiddleware(logger))
@@ -137,9 +138,13 @@ func main() {
 
 		// Products flat
 		admin.GET("/products", productHandler.ListByGallery)
+		admin.GET("/products/:id", productHandler.GetDetailAdmin)
 		admin.PATCH("/products/:id", productHandler.Update)
 		admin.DELETE("/products/:id", productHandler.Delete)
 		admin.POST("/products/:id/toggle-active", productHandler.ToggleActive)
+		admin.GET("/products/:id/images", productImageHandler.List)
+		admin.POST("/products/:id/images", productImageHandler.Add)
+		admin.DELETE("/products/:id/images/:image_id", productImageHandler.Delete)
 	}
 
 	logger.Info("starting server", "port", 4000)

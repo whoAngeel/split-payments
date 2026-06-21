@@ -65,10 +65,14 @@ func (h *ProductHandler) Explore(c *gin.Context) {
 type createProductRequest struct {
 	Name           string `json:"name" binding:"required"`
 	BasePrice      int64  `json:"base_price" binding:"required,min=1"`
-	AssetCode      string `json:"asset_code" binding:"required"`
+	AssetCode      string `json:"asset_code"`
 	AssetScale     int    `json:"asset_scale"`
 	ImageURL       string `json:"image_url"`
 	CommissionRate int    `json:"commission_rate"`
+	Description    string `json:"description"`
+	Materials      string `json:"materials"`
+	Dimensions     string `json:"dimensions"`
+	Tags           string `json:"tags"`
 }
 
 func (h *ProductHandler) Create(c *gin.Context) {
@@ -84,7 +88,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		return
 	}
 
-	product, err := h.svc.Create(uint(artisanID), req.Name, req.AssetCode, req.BasePrice, req.AssetScale, req.CommissionRate, req.ImageURL)
+	product, err := h.svc.Create(uint(artisanID), req.Name, req.AssetCode, req.BasePrice, req.AssetScale, req.CommissionRate, req.ImageURL, req.Description, req.Materials, req.Dimensions, req.Tags)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -141,6 +145,10 @@ type updateProductRequest struct {
 	BasePrice      int64  `json:"base_price"`
 	ImageURL       string `json:"image_url"`
 	CommissionRate int    `json:"commission_rate"`
+	Description    string `json:"description"`
+	Materials      string `json:"materials"`
+	Dimensions     string `json:"dimensions"`
+	Tags           string `json:"tags"`
 }
 
 func (h *ProductHandler) Update(c *gin.Context) {
@@ -156,7 +164,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		return
 	}
 
-	product, err := h.svc.Update(uint(id), req.Name, req.ImageURL, req.BasePrice, req.CommissionRate)
+	product, err := h.svc.Update(uint(id), req.Name, req.ImageURL, req.BasePrice, req.CommissionRate, req.Description, req.Materials, req.Dimensions, req.Tags)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -172,6 +180,20 @@ func (h *ProductHandler) GetDetail(c *gin.Context) {
 		return
 	}
 	detail, err := h.svc.GetDetail(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, detail)
+}
+
+func (h *ProductHandler) GetDetailAdmin(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+	detail, err := h.svc.GetDetailAdmin(uint(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
