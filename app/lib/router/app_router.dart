@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:openpayments_app/providers/auth_provider.dart';
 import 'package:openpayments_app/screen/account_screen.dart';
 import 'package:openpayments_app/screen/admin_artisans_screen.dart';
+import 'package:openpayments_app/screen/admin_artisan_form_screen.dart';
+import 'package:openpayments_app/screen/admin_artisan_products_screen.dart';
 import 'package:openpayments_app/screen/admin_dashboard_screen.dart';
 import 'package:openpayments_app/screen/admin_products_screen.dart';
 import 'package:openpayments_app/screen/admin_settings_screen.dart';
@@ -127,6 +129,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return ProductDetailScreen(productId: id);
         },
       ),
+
+      // Admin overlay routes
+      GoRoute(
+        path: '/admin/artisans/new',
+        name: 'admin-artisan-new',
+        builder: (context, state) => const AdminArtisanFormScreen(),
+      ),
+      GoRoute(
+        path: '/admin/artisans/:id/edit',
+        name: 'admin-artisan-edit',
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return AdminArtisanFormScreen(artisanId: id);
+        },
+      ),
+      GoRoute(
+        path: '/admin/artisans/:id/products',
+        name: 'admin-artisan-products',
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          final name = state.extra as String? ?? '';
+          return AdminArtisanProductsScreen(artisanId: id, artisanName: name);
+        },
+      ),
+
       GoRoute(
         path: '/login',
         name: 'login',

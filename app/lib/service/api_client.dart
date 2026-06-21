@@ -61,6 +61,22 @@ class ApiClient {
     return _handle(response);
   }
 
+  Future<dynamic> patch(String path, {Map<String, dynamic>? body}) async {
+    final uri = Uri.parse('$baseURL$path');
+    _logger?.d('PATCH $uri');
+    final response = await _client
+        .patch(uri, headers: _headers, body: body != null ? jsonEncode(body) : null)
+        .timeout(_timeout);
+    return _handle(response);
+  }
+
+  Future<dynamic> delete(String path) async {
+    final uri = Uri.parse('$baseURL$path');
+    _logger?.d('DELETE $uri');
+    final response = await _client.delete(uri, headers: _headers).timeout(_timeout);
+    return _handle(response);
+  }
+
   dynamic _handle(http.Response response) {
     final body = response.body.isNotEmpty ? jsonDecode(response.body) : null;
 

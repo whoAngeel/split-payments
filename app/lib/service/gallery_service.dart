@@ -1,3 +1,5 @@
+import 'package:openpayments_app/models/admin_product.dart';
+import 'package:openpayments_app/models/artisan.dart';
 import 'package:openpayments_app/models/gallery_dashboard.dart';
 import 'package:openpayments_app/models/payment.dart';
 import 'package:openpayments_app/models/product.dart';
@@ -43,5 +45,124 @@ class GalleryService {
       '/api/galleries/$galleryId/commission',
       body: {'rate': rate},
     );
+  }
+
+  // Artisans
+
+  Future<List<Artisan>> getArtisans(int galleryId) async {
+    final json = await _api.get('/api/galleries/$galleryId/artisans');
+    final list = json as List<dynamic>;
+    return list
+        .map((e) => Artisan.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<Artisan> createArtisan(int galleryId, String name, String walletAddressUrl) async {
+    final json = await _api.post(
+      '/api/galleries/$galleryId/artisans',
+      body: {
+        'name': name,
+        'wallet_address_url': walletAddressUrl,
+      },
+    );
+    return Artisan.fromJson(json as Map<String, dynamic>);
+  }
+
+  Future<Artisan> updateArtisan(int galleryId, int artisanId, {
+    String? name,
+    String? walletAddressUrl,
+    String? imageUrl,
+    String? bio,
+  }) async {
+    final json = await _api.patch(
+      '/api/galleries/$galleryId/artisans/$artisanId',
+      body: {
+        if (name != null) 'name': name,
+        if (walletAddressUrl != null) 'wallet_address_url': walletAddressUrl,
+        if (imageUrl != null) 'image_url': imageUrl,
+        if (bio != null) 'bio': bio,
+      },
+    );
+    return Artisan.fromJson(json as Map<String, dynamic>);
+  }
+
+  Future<void> deleteArtisan(int galleryId, int artisanId) async {
+    await _api.delete('/api/galleries/$galleryId/artisans/$artisanId');
+  }
+
+  Future<Artisan> toggleArtisanActive(int galleryId, int artisanId, {bool cascade = false}) async {
+    final path = cascade
+        ? '/api/galleries/$galleryId/artisans/$artisanId/toggle-active?cascade=true'
+        : '/api/galleries/$galleryId/artisans/$artisanId/toggle-active';
+    final json = await _api.post(path);
+    return Artisan.fromJson(json as Map<String, dynamic>);
+  }
+
+  Future<Artisan> getArtisan(int galleryId, int artisanId) async {
+    final json = await _api.get('/api/galleries/$galleryId/artisans/$artisanId');
+    return Artisan.fromJson(json as Map<String, dynamic>);
+  }
+
+  // Products
+
+  Future<List<AdminProduct>> getAdminProducts(int galleryId) async {
+    final json = await _api.get('/api/galleries/$galleryId/products');
+    final list = json as List<dynamic>;
+    return list
+        .map((e) => AdminProduct.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<AdminProduct>> getArtisanProducts(int galleryId, int artisanId) async {
+    final json = await _api.get('/api/galleries/$galleryId/artisans/$artisanId/products');
+    final list = json as List<dynamic>;
+    return list
+        .map((e) => AdminProduct.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<AdminProduct> createProduct(int galleryId, int artisanId, {
+    required String name,
+    required int basePrice,
+    required String assetCode,
+    int assetScale = 2,
+    String imageUrl = '',
+  }) async {
+    final json = await _api.post(
+      '/api/galleries/$galleryId/artisans/$artisanId/products',
+      body: {
+        'name': name,
+        'base_price': basePrice,
+        'asset_code': assetCode,
+        'asset_scale': assetScale,
+        'image_url': imageUrl,
+      },
+    );
+    return AdminProduct.fromJson(json as Map<String, dynamic>);
+  }
+
+  Future<AdminProduct> updateProduct(int galleryId, int productId, {
+    String? name,
+    int? basePrice,
+    String? imageUrl,
+  }) async {
+    final json = await _api.patch(
+      '/api/galleries/$galleryId/products/$productId',
+      body: {
+        if (name != null) 'name': name,
+        if (basePrice != null) 'base_price': basePrice,
+        if (imageUrl != null) 'image_url': imageUrl,
+      },
+    );
+    return AdminProduct.fromJson(json as Map<String, dynamic>);
+  }
+
+  Future<void> deleteProduct(int galleryId, int productId) async {
+    await _api.delete('/api/galleries/$galleryId/products/$productId');
+  }
+
+  Future<AdminProduct> toggleProductActive(int galleryId, int productId) async {
+    final json = await _api.post('/api/galleries/$galleryId/products/$productId/toggle-active');
+    return AdminProduct.fromJson(json as Map<String, dynamic>);
   }
 }
