@@ -188,7 +188,14 @@ type ExploreProduct struct {
 	IsFavorited bool          `json:"is_favorited"`
 }
 
-func (s *ProductService) ListAllExploreCursor(cursor uint, limit int) (*shared.CursorResponse, error) {
+type ExploreFilters struct {
+	Location  string
+	Specialty string
+	MinPrice  int64
+	MaxPrice  int64
+}
+
+func (s *ProductService) ListAllExploreCursor(cursor uint, limit int, filters ExploreFilters) (*shared.CursorResponse, error) {
 	if limit < 1 || limit > 50 {
 		limit = 20
 	}
@@ -203,6 +210,18 @@ func (s *ProductService) ListAllExploreCursor(cursor uint, limit int) (*shared.C
 
 	if cursor > 0 {
 		query = query.Where("products.id < ?", cursor)
+	}
+	if filters.Location != "" {
+		query = query.Where("artisans.location = ?", filters.Location)
+	}
+	if filters.Specialty != "" {
+		query = query.Where("artisans.specialty = ?", filters.Specialty)
+	}
+	if filters.MinPrice > 0 {
+		query = query.Where("products.base_price >= ?", filters.MinPrice)
+	}
+	if filters.MaxPrice > 0 {
+		query = query.Where("products.base_price <= ?", filters.MaxPrice)
 	}
 
 	if err := query.Find(&products).Error; err != nil {
@@ -354,6 +373,35 @@ func splitTags(tags string) []string {
 	}
 	return result
 }
+
+type ExploreFilterOptions struct {
+	Locations   []string `json:"locations"`
+	Specialties []string `json:"specialties"`
+}
+
+func (s *ProductService) GetExploreFilterOptions() (*ExploreFilterOptions, error) {
+	var locations []string
+	s.db.Table("artisans").
+		Joins("JOIN products ON products.artisan_id = artisans.id").
+		Where("products.is_active = ? AND artisans.is_active = ?", true, true).
+		Where("artisans.location != ''").
+		Distinct("artisans.location").
+		Pluck("artisans.location", &locations)
+
+	var specialties []string
+	s.db.Table("artisans").
+		Joins("JOIN products ON products.artisan_id = artisans.id").
+		Where("products.is_active = ? AND artisans.is_active = ?", true, true).
+		Where("artisans.specialty != ''").
+		Distinct("artisans.specialty").
+		Pluck("artisans.specialty", &specialties)
+
+	return &ExploreFilterOptions{
+		Locations:   locations,
+		Specialties: specialties,
+	}, nil
+}
+
 func IsNotFound(err error) bool {
 	return err != nil && err.Error() == "record not found"
 }

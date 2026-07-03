@@ -94,6 +94,7 @@ func main() {
 	// Public explore
 	router.GET("/api/explore/products", middleware.OptionalAuth(authSvc), productHandler.Explore)
 	router.GET("/api/explore/products/:id", productHandler.GetDetail)
+	router.GET("/api/explore/filters", productHandler.ExploreFilters)
 	router.GET("/api/artisans/:id", artisanHandler.GetPublic)
 
 	// Protected buyer routes

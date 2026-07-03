@@ -32,8 +32,17 @@ type exploreProductResponse struct {
 func (h *ProductHandler) Explore(c *gin.Context) {
 	cursor, _ := strconv.ParseUint(c.DefaultQuery("cursor", "0"), 10, 64)
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	minPrice, _ := strconv.ParseInt(c.DefaultQuery("min_price", "0"), 10, 64)
+	maxPrice, _ := strconv.ParseInt(c.DefaultQuery("max_price", "0"), 10, 64)
 
-	result, err := h.svc.ListAllExploreCursor(uint(cursor), limit)
+	filters := service.ExploreFilters{
+		Location:  c.Query("location"),
+		Specialty: c.Query("specialty"),
+		MinPrice:  minPrice,
+		MaxPrice:  maxPrice,
+	}
+
+	result, err := h.svc.ListAllExploreCursor(uint(cursor), limit, filters)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -51,6 +60,15 @@ func (h *ProductHandler) Explore(c *gin.Context) {
 	result.Items = items
 
 	c.JSON(http.StatusOK, result)
+}
+
+func (h *ProductHandler) ExploreFilters(c *gin.Context) {
+	opts, err := h.svc.GetExploreFilterOptions()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, opts)
 }
 
 type createProductRequest struct {

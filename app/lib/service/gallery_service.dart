@@ -43,8 +43,19 @@ class GalleryService {
         .toList();
   }
 
-  Future<Map<String, dynamic>> getExplorePage({int cursor = 0, int limit = 20}) async {
-    final json = await _api.get('/api/explore/products?cursor=$cursor&limit=$limit');
+  Future<Map<String, dynamic>> getExplorePage({int cursor = 0, int limit = 20, String? location, String? specialty, int? minPrice, int? maxPrice}) async {
+    final params = <String, String>{'cursor': '$cursor', 'limit': '$limit'};
+    if (location != null && location.isNotEmpty) params['location'] = location;
+    if (specialty != null && specialty.isNotEmpty) params['specialty'] = specialty;
+    if (minPrice != null && minPrice > 0) params['min_price'] = '$minPrice';
+    if (maxPrice != null && maxPrice > 0) params['max_price'] = '$maxPrice';
+    final queryString = params.entries.map((e) => '${e.key}=${e.value}').join('&');
+    final json = await _api.get('/api/explore/products?$queryString');
+    return json as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getFilterOptions() async {
+    final json = await _api.get('/api/explore/filters');
     return json as Map<String, dynamic>;
   }
 

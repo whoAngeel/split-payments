@@ -158,6 +158,10 @@ class _ExploreContent extends ConsumerStatefulWidget {
 class _ExploreContentState extends ConsumerState<_ExploreContent> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  List<String> _locations = [];
+  List<String> _specialties = [];
+  String? _selectedLocation;
+  String? _selectedSpecialty;
 
   @override
   void initState() {
@@ -165,6 +169,18 @@ class _ExploreContentState extends ConsumerState<_ExploreContent> {
     _searchController.addListener(() {
       setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
     });
+    _loadFilters();
+  }
+
+  Future<void> _loadFilters() async {
+    try {
+      final service = ref.read(galleryServiceProvider);
+      final opts = await service.getFilterOptions();
+      if (mounted) setState(() {
+        _locations = (opts['locations'] as List<dynamic>?)?.cast<String>() ?? [];
+        _specialties = (opts['specialties'] as List<dynamic>?)?.cast<String>() ?? [];
+      });
+    } catch (_) {}
   }
 
   @override
@@ -265,18 +281,44 @@ class _ExploreContentState extends ConsumerState<_ExploreContent> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                const AppChip(label: 'All Works', selected: true),
-                const SizedBox(width: 8),
-                AppChip(label: 'Textiles', onTap: () {}),
-                const SizedBox(width: 8),
-                AppChip(label: 'Pottery', onTap: () {}),
-                const SizedBox(width: 8),
-                AppChip(label: 'Jewelry', onTap: () {}),
-                const SizedBox(width: 8),
-                AppChip(label: 'Wood Carving', onTap: () {}),
+                AppChip(
+                  label: 'Todos',
+                  selected: _selectedSpecialty == null && _selectedLocation == null,
+                  onTap: () => setState(() { _selectedSpecialty = null; _selectedLocation = null; }),
+                ),
+                ..._specialties.map((s) => Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: AppChip(
+                    label: s,
+                    selected: _selectedSpecialty == s,
+                    onTap: () => setState(() {
+                      _selectedSpecialty = _selectedSpecialty == s ? null : s;
+                      _selectedLocation = null;
+                    }),
+                  ),
+                )),
               ],
             ),
           ),
+          if (_locations.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _locations.map((l) => Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: AppChip(
+                    label: l,
+                    selected: _selectedLocation == l,
+                    onTap: () => setState(() {
+                      _selectedLocation = _selectedLocation == l ? null : l;
+                      _selectedSpecialty = null;
+                    }),
+                  ),
+                )).toList(),
+              ),
+            ),
+          ],
         ],
       ),
     );
