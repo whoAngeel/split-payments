@@ -34,13 +34,18 @@ class GalleryService {
     throw ApiException(response.statusCode, response.body);
   }
 
-  Future<List<Product>> getProducts() async {
-    final json = await _api.get('/api/explore/products');
-    _logger.i('Explore response: $json');
-    final list = json as List<dynamic>;
+  Future<List<Product>> getProducts({int cursor = 0, int limit = 20}) async {
+    final json = await _api.get('/api/explore/products?cursor=$cursor&limit=$limit');
+    final data = json as Map<String, dynamic>;
+    final list = data['items'] as List<dynamic>;
     return list
         .map((e) => Product.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<Map<String, dynamic>> getExplorePage({int cursor = 0, int limit = 20}) async {
+    final json = await _api.get('/api/explore/products?cursor=$cursor&limit=$limit');
+    return json as Map<String, dynamic>;
   }
 
   Future<ProductDetail> getProductDetail(int id) async {
@@ -75,12 +80,15 @@ class GalleryService {
 
   // Artisans
 
-  Future<List<Artisan>> getArtisans(int galleryId) async {
-    final json = await _api.get('/api/galleries/$galleryId/artisans');
-    final list = json as List<dynamic>;
-    return list
-        .map((e) => Artisan.fromJson(e as Map<String, dynamic>))
-        .toList();
+  Future<Map<String, dynamic>> getArtisansPage(int galleryId, {int page = 1, int limit = 20}) async {
+    final json = await _api.get('/api/galleries/$galleryId/artisans?page=$page&limit=$limit');
+    return json as Map<String, dynamic>;
+  }
+
+  Future<List<Artisan>> getArtisans(int galleryId, {int page = 1, int limit = 20}) async {
+    final data = await getArtisansPage(galleryId, page: page, limit: limit);
+    final list = data['items'] as List<dynamic>;
+    return list.map((e) => Artisan.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<Artisan> createArtisan(
@@ -164,9 +172,10 @@ class GalleryService {
 
   // Products
 
-  Future<List<AdminProduct>> getAdminProducts(int galleryId) async {
-    final json = await _api.get('/api/galleries/$galleryId/products');
-    final list = json as List<dynamic>;
+  Future<List<AdminProduct>> getAdminProducts(int galleryId, {int page = 1, int limit = 20}) async {
+    final json = await _api.get('/api/galleries/$galleryId/products?page=$page&limit=$limit');
+    final data = json as Map<String, dynamic>;
+    final list = data['items'] as List<dynamic>;
     return list
         .map((e) => AdminProduct.fromJson(e as Map<String, dynamic>))
         .toList();

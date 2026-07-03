@@ -30,34 +30,25 @@ type exploreProductResponse struct {
 }
 
 func (h *ProductHandler) Explore(c *gin.Context) {
-	products, err := h.svc.ListAllExplore()
+	cursor, _ := strconv.ParseUint(c.DefaultQuery("cursor", "0"), 10, 64)
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+
+	result, err := h.svc.ListAllExploreCursor(uint(cursor), limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	userID, authenticated := c.Get("userID")
-
-	var favIDs map[uint]bool
-	if authenticated {
+	favIDs := map[uint]bool{}
+	if userID, ok := c.Get("userID"); ok {
 		favIDs, _ = h.favSvc.GetFavoritedProductIDs(userID.(uint))
 	}
 
-	result := make([]exploreProductResponse, 0, len(products))
-	for _, p := range products {
-		r := exploreProductResponse{
-			ID:          p.ID,
-			Name:        p.Name,
-			BasePrice:   p.BasePrice,
-			AssetCode:   p.AssetCode,
-			AssetScale:  p.AssetScale,
-			ArtisanName: p.ArtisanName,
-			ImageURL:    p.ImageURL,
-			Split:       p.Split,
-			IsFavorited: favIDs[p.ID],
-		}
-		result = append(result, r)
+	items := result.Items.([]service.ExploreProduct)
+	for i := range items {
+		items[i].IsFavorited = favIDs[items[i].ID]
 	}
+	result.Items = items
 
 	c.JSON(http.StatusOK, result)
 }
@@ -114,15 +105,15 @@ func (h *ProductHandler) ListByArtisan(c *gin.Context) {
 }
 
 func (h *ProductHandler) ListByGallery(c *gin.Context) {
-	galleryID := c.GetUint("galleryID")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 
-	products, err := h.svc.ListByGallery(galleryID)
+	result, err := h.svc.ListByGalleryPaginated(c.GetUint("galleryID"), page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	c.JSON(http.StatusOK, products)
+	c.JSON(http.StatusOK, result)
 }
 
 func (h *ProductHandler) Delete(c *gin.Context) {

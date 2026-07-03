@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/whoAngeel/openpayments/internal/gallery/model"
+	shared "github.com/whoAngeel/openpayments/internal/shared/model"
 	"gorm.io/gorm"
 )
 
@@ -61,17 +62,39 @@ func (s *ProductService) GetByArtisan(artisanID uint) ([]model.Product, error) {
 	return products, nil
 }
 
-func (s *ProductService) ListByGallery(galleryID uint) ([]model.Product, error) {
+func (s *ProductService) ListByGalleryPaginated(galleryID uint, page, limit int) (*shared.PageResponse, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	var total int64
+	s.db.Table("products").
+		Joins("JOIN gallery_artisans ON gallery_artisans.artisan_id = products.artisan_id").
+		Where("gallery_artisans.gallery_id = ?", galleryID).
+		Count(&total)
+
 	var products []model.Product
+	offset := (page - 1) * limit
 	if err := s.db.
 		Joins("JOIN gallery_artisans ON gallery_artisans.artisan_id = products.artisan_id").
 		Where("gallery_artisans.gallery_id = ?", galleryID).
 		Preload("Artisan").
-		Order("products.created_at DESC").
+		Order("products.id DESC").
+		Offset(offset).
+		Limit(limit).
 		Find(&products).Error; err != nil {
 		return nil, fmt.Errorf("listing gallery products: %w", err)
 	}
-	return products, nil
+
+	return &shared.PageResponse{
+		Items: products,
+		Total: total,
+		Page:  page,
+		Limit: limit,
+	}, nil
 }
 
 func (s *ProductService) ListAll() ([]model.Product, error) {
@@ -162,17 +185,34 @@ type ExploreProduct struct {
 	ArtisanName string        `json:"artisan_name"`
 	ImageURL    string        `json:"image_url"`
 	Split       *ProductSplit `json:"split"`
+	IsFavorited bool          `json:"is_favorited"`
 }
 
-func (s *ProductService) ListAllExplore() ([]ExploreProduct, error) {
+func (s *ProductService) ListAllExploreCursor(cursor uint, limit int) (*shared.CursorResponse, error) {
+	if limit < 1 || limit > 50 {
+		limit = 20
+	}
+
 	var products []model.Product
-	if err := s.db.
+	query := s.db.
 		Preload("Artisan").
 		Joins("JOIN artisans ON artisans.id = products.artisan_id").
 		Where("products.is_active = ? AND artisans.is_active = ?", true, true).
-		Order("products.created_at DESC").
-		Find(&products).Error; err != nil {
-		return nil, fmt.Errorf("listing products: %w", err)
+		Order("products.id DESC").
+		Limit(limit + 1)
+
+	if cursor > 0 {
+		query = query.Where("products.id < ?", cursor)
+	}
+
+	if err := query.Find(&products).Error; err != nil {
+		return nil, fmt.Errorf("listing explore products: %w", err)
+	}
+
+	var nextCursor uint
+	if len(products) > limit {
+		nextCursor = products[len(products)-1].ID
+		products = products[:len(products)-1]
 	}
 
 	result := make([]ExploreProduct, len(products))
@@ -196,7 +236,11 @@ func (s *ProductService) ListAllExplore() ([]ExploreProduct, error) {
 		}
 		result[i] = ep
 	}
-	return result, nil
+
+	return &shared.CursorResponse{
+		Items:      result,
+		NextCursor: nextCursor,
+	}, nil
 }
 
 type ProductDetailResponse struct {

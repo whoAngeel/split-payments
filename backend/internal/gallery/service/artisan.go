@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/whoAngeel/openpayments/internal/gallery/model"
+	shared "github.com/whoAngeel/openpayments/internal/shared/model"
 	"gorm.io/gorm"
 )
 
@@ -57,6 +58,40 @@ func (s *ArtisanService) ListByGallery(galleryID uint) ([]model.Artisan, error) 
 		return nil, fmt.Errorf("listing gallery artisans: %w", err)
 	}
 	return artisans, nil
+}
+
+func (s *ArtisanService) ListByGalleryPaginated(galleryID uint, page, limit int) (*shared.PageResponse, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	var total int64
+	s.db.Table("artisans").
+		Joins("JOIN gallery_artisans ON gallery_artisans.artisan_id = artisans.id").
+		Where("gallery_artisans.gallery_id = ?", galleryID).
+		Count(&total)
+
+	var artisans []model.Artisan
+	offset := (page - 1) * limit
+	if err := s.db.
+		Joins("JOIN gallery_artisans ON gallery_artisans.artisan_id = artisans.id").
+		Where("gallery_artisans.gallery_id = ?", galleryID).
+		Order("artisans.id DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&artisans).Error; err != nil {
+		return nil, fmt.Errorf("listing gallery artisans: %w", err)
+	}
+
+	return &shared.PageResponse{
+		Items: artisans,
+		Total: total,
+		Page:  page,
+		Limit: limit,
+	}, nil
 }
 
 func (s *ArtisanService) Update(id uint, name, walletAddressURL, imageURL, bio, location, specialty, craftType, tags string) (*model.Artisan, error) {

@@ -52,14 +52,15 @@ func (h *ArtisanHandler) Create(c *gin.Context) {
 }
 
 func (h *ArtisanHandler) List(c *gin.Context) {
-	galleryID := c.GetUint("galleryID")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 
-	artisans, err := h.svc.ListByGallery(galleryID)
+	result, err := h.svc.ListByGalleryPaginated(c.GetUint("galleryID"), page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, artisans)
+	c.JSON(http.StatusOK, result)
 }
 
 func (h *ArtisanHandler) Get(c *gin.Context) {
