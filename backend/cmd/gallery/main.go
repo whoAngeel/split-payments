@@ -121,6 +121,7 @@ func main() {
 		// Gallery management
 		admin.GET("", galleryHandler.Get)
 		admin.PUT("/commission", galleryHandler.SetCommission)
+		admin.GET("/payments", paymentHandler.ListByGallery)
 		// Artisan link/unlink (moved outside /artisans to avoid wildcard conflict)
 		admin.POST("/link-artisan/:artisan_id", galleryHandler.AddArtisan)
 		admin.DELETE("/link-artisan/:artisan_id", galleryHandler.RemoveArtisan)

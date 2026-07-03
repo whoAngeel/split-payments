@@ -8,6 +8,7 @@ import 'package:openpayments_app/screen/admin/artisans/artisans_screen.dart';
 import 'package:openpayments_app/screen/admin/artisans/artisan_form_screen.dart';
 import 'package:openpayments_app/screen/admin/artisans/artisan_products_screen.dart';
 import 'package:openpayments_app/screen/admin/dashboard/dashboard_screen.dart';
+import 'package:openpayments_app/screen/admin/payments/payments_screen.dart';
 import 'package:openpayments_app/screen/admin/products/products_screen.dart';
 import 'package:openpayments_app/screen/admin/products/product_form_screen.dart';
 import 'package:openpayments_app/screen/admin/products/product_detail_screen.dart';
@@ -140,6 +141,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // Admin overlay routes
+      GoRoute(
+        path: '/admin/payments',
+        name: 'admin-payments',
+        builder: (context, state) => const AdminPaymentsScreen(),
+      ),
       GoRoute(
         path: '/admin/artisans/new',
         name: 'admin-artisan-new',

@@ -10,7 +10,7 @@ class WsService {
     void Function(Map<String, dynamic>) onMessage,
   ) {
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://localhost:4001/ws/$sessionId'),
+      Uri.parse('ws://192.168.1.13:4001/ws/$sessionId'),
     );
 
     _channel!.stream.listen(
