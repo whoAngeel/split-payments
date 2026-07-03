@@ -63,9 +63,12 @@
 - Image proxy: `GET /products/*filepath` sirve desde MinIO
 - Formatos: jpg, jpeg, png, webp, heic
 
-**Dashboard** `GET /galleries/:gid`
+**Dashboard** `GET /galleries/:gid`, `GET /galleries/:gid/stats`
 
 - Gallery info + conteos: active/total artisans, active/total products
+- Stats: gallery_earnings, completed_payments, pending_payments, sales_over_time (7d)
+- Per artisan: `GET /galleries/:gid/stats/artisans` (ventas, monto, productos)
+- Per product: `GET /galleries/:gid/stats/products` (ventas, monto)
 
 **Pagos por galería** `GET /galleries/:gid/payments` (RequireGalleryOwner)
 
@@ -93,8 +96,9 @@
 
 **Admin — Dashboard**
 
-- Métricas tappables (navegan a su tab): artesanos activos/total, productos activos/total
-- Card "Ingresos": total vendido + comisión de galería + badge de pendientes, tap → historial
+- Métricas tappables: artesanos activos/total, productos activos/total
+- Stats row: ganancias (gallery share), pagos completados, pendientes
+- Card "Ingresos": total vendido + comisión + badge de pendientes
 - "Pagos recientes" (últimos 3) con "Ver todos"
 - Nombre de galería, pull-to-refresh
 
@@ -160,7 +164,8 @@
 ### Prioridad alta
 
 - [x] **Filtros en Explore** ✅ — ubicación, especialidad, rango de precio (backend + chips dinámicos)
-- [x] **Paginación** ✅ — backend listo (offset admin, cursor explore). Falta UI en Flutter.
+- [x] **Paginación** ✅ — backend listo (offset admin, cursor explore)
+- [x] **Gráficos y stats del dashboard** ✅ — ganancias, completados/pendientes, per artisan/product
 - [ ] **Eliminar foto de artesano** (actualmente solo cambiar)
 - [ ] **Ordenar productos** (drag & drop para reordenar)
 - [ ] **Buscar artesanos** en el admin
