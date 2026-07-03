@@ -17,14 +17,19 @@ class AdminSettingsScreen extends ConsumerWidget {
       children: [
         Text(
           'Configuración',
-          style: tt.headlineSmall?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w600),
+          style: tt.headlineSmall?.copyWith(
+            color: cs.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 24),
 
         // Profile card
         Card(
           color: cs.surfaceContainerLow,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           child: InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () => context.push('/account'),
@@ -37,16 +42,32 @@ class AdminSettingsScreen extends ConsumerWidget {
                     backgroundColor: cs.primaryContainer,
                     child: Text(
                       _initials(user?.name ?? ''),
-                      style: tt.titleMedium?.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600),
+                      style: tt.titleMedium?.copyWith(
+                        color: cs.onPrimaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(user?.name ?? '', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 2),
-                      Text(user?.email ?? '', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
-                    ]),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user?.name ?? '',
+                          style: tt.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          user?.email ?? '',
+                          style: tt.bodySmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
                 ],
@@ -59,9 +80,11 @@ class AdminSettingsScreen extends ConsumerWidget {
         // Logout
         Card(
           color: cs.surfaceContainerLow,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           child: ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
+            leading: Icon(Icons.logout, color: cs.error),
             title: const Text('Cerrar sesión'),
             onTap: () async {
               await ref.read(authProvider.notifier).logout();

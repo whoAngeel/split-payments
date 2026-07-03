@@ -6,12 +6,14 @@ import 'package:openpayments_app/providers/admin_crud_provider.dart';
 import 'package:openpayments_app/providers/api_client_provider.dart';
 import 'package:openpayments_app/widgets/app_empty_state.dart';
 import 'package:openpayments_app/widgets/app_error_state.dart';
+import 'package:openpayments_app/widgets/app_image.dart';
 
 class AdminArtisansScreen extends ConsumerStatefulWidget {
   const AdminArtisansScreen({super.key});
 
   @override
-  ConsumerState<AdminArtisansScreen> createState() => _AdminArtisansScreenState();
+  ConsumerState<AdminArtisansScreen> createState() =>
+      _AdminArtisansScreenState();
 }
 
 class _AdminArtisansScreenState extends ConsumerState<AdminArtisansScreen> {
@@ -33,8 +35,9 @@ class _AdminArtisansScreenState extends ConsumerState<AdminArtisansScreen> {
       backgroundColor: cs.surface,
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/admin/artisans/new'),
-        backgroundColor: cs.inverseSurface,
-        foregroundColor: cs.onInverseSurface,
+        backgroundColor: cs.primary,
+        foregroundColor: cs.onPrimary,
+        tooltip: 'Nuevo artesano',
         child: const Icon(Icons.add),
       ),
       body: artisansAsync.when(
@@ -48,7 +51,10 @@ class _AdminArtisansScreenState extends ConsumerState<AdminArtisansScreen> {
             return AppEmptyState(
               icon: Icons.people_outlined,
               title: 'Sin artesanos',
-              description: 'Agrega tu primer artesano con el botón +',
+              description:
+                  'Registra a los artesanos de tu galería para poder publicar sus productos.',
+              actionLabel: 'Agregar artesano',
+              onAction: () => context.push('/admin/artisans/new'),
             );
           }
 
@@ -72,13 +78,16 @@ class _AdminArtisansScreenState extends ConsumerState<AdminArtisansScreen> {
                         ),
                         const SizedBox(width: 10),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: cs.primaryContainer,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            '$active / ${artisans.length}',
+                            '$active de ${artisans.length} activos',
                             style: tt.labelSmall?.copyWith(
                               color: cs.onPrimaryContainer,
                               fontWeight: FontWeight.w600,
@@ -93,7 +102,7 @@ class _AdminArtisansScreenState extends ConsumerState<AdminArtisansScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                   sliver: SliverList.separated(
                     itemCount: artisans.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) =>
                         _ArtisanCard(artisan: artisans[index]),
                   ),
@@ -108,6 +117,10 @@ class _AdminArtisansScreenState extends ConsumerState<AdminArtisansScreen> {
 }
 
 // ─── Artisan Card ─────────────────────────────────────────────────────────────
+//
+// Jerarquía: nombre primero, luego wallet. Toda la card navega a los
+// productos del artesano; editar/eliminar viven en el menú overflow y el
+// switch controla el estado. Una sola familia de affordances.
 
 class _ArtisanCard extends ConsumerWidget {
   final Artisan artisan;
@@ -119,163 +132,192 @@ class _ArtisanCard extends ConsumerWidget {
     final tt = Theme.of(context).textTheme;
     final isActive = artisan.isActive;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(14),
-        border: isActive ? null : Border.all(color: cs.outlineVariant),
-      ),
+    return Material(
+      color: cs.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(14),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: [foto | acciones]
-          SizedBox(
-            height: 130,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Foto — fixed width, fills height of right col
-                SizedBox(
-                  width: 130,
+      child: InkWell(
+        onTap: () => context.push(
+          '/admin/artisans/${artisan.id}/products',
+          extra: artisan.name,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: isActive ? null : Border.all(color: cs.outlineVariant),
+          ),
+          // Foto con tamaño fijo: dentro de un sliver la altura entrante es
+          // infinita, así que nada aquí puede depender de stretch ni de
+          // alturas intrínsecas (SizedBox.expand las reporta infinitas).
+          padding: const EdgeInsets.fromLTRB(10, 10, 4, 10),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 84,
+                  height: 84,
                   child: _ArtisanBanner(artisan: artisan),
                 ),
-                VerticalDivider(width: 1, color: cs.outlineVariant),
-                // Acciones — drives card height
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Toggle
-                        Row(
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Switch(
+                            Text(
+                              artisan.name,
+                              style: tt.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: isActive
+                                    ? cs.onSurface
+                                    : cs.onSurfaceVariant,
+                                height: 1.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (artisan.specialty.isNotEmpty ||
+                                artisan.location.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                [
+                                  if (artisan.specialty.isNotEmpty)
+                                    artisan.specialty,
+                                  if (artisan.location.isNotEmpty)
+                                    artisan.location,
+                                ].join(' · '),
+                                style: tt.labelSmall?.copyWith(
+                                  color: cs.onSurfaceVariant,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.account_balance_wallet_outlined,
+                                  size: 14,
+                                  color: artisan.walletAddressUrl.isNotEmpty
+                                      ? cs.primary
+                                      : cs.error,
+                                ),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: Text(
+                                    artisan.walletAddressUrl.isNotEmpty
+                                        ? artisan.walletAddressUrl
+                                        : 'Sin wallet — no puede recibir pagos',
+                                    style: tt.bodySmall?.copyWith(
+                                      color: artisan.walletAddressUrl.isNotEmpty
+                                          ? cs.onSurfaceVariant
+                                          : cs.error,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Semantics(
+                            label: isActive
+                                ? 'Desactivar a ${artisan.name}'
+                                : 'Activar a ${artisan.name}',
+                            child: Switch(
                               value: isActive,
                               onChanged: (_) => _toggleArtisan(context, ref),
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              isActive ? 'Activo' : 'Inactivo',
-                              style: tt.labelSmall?.copyWith(
-                                color: isActive ? cs.primary : cs.onSurfaceVariant,
-                                fontWeight: FontWeight.w500,
-                              ),
+                          ),
+                          PopupMenuButton<String>(
+                            tooltip: 'Más opciones',
+                            icon: Icon(
+                              Icons.more_vert,
+                              color: cs.onSurfaceVariant,
                             ),
-                          ],
-                        ),
-                        const Spacer(),
-                        // Ver productos · editar · eliminar (una fila)
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextButton.icon(
-                                onPressed: () => context.push(
-                                  '/admin/artisans/${artisan.id}/products',
-                                  extra: artisan.name,
-                                ),
-                                icon: const Icon(Icons.inventory_2_outlined, size: 13),
-                                label: const Text('Productos'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: cs.onSurfaceVariant,
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                                  visualDensity: VisualDensity.compact,
-                                  textStyle: tt.labelSmall?.copyWith(fontWeight: FontWeight.w500),
-                                  alignment: Alignment.centerLeft,
+                            onSelected: (value) {
+                              switch (value) {
+                                case 'edit':
+                                  context.push(
+                                    '/admin/artisans/${artisan.id}/edit',
+                                  );
+                                case 'delete':
+                                  _confirmDelete(context, ref);
+                              }
+                            },
+                            itemBuilder: (_) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: ListTile(
+                                  leading: Icon(Icons.edit_outlined),
+                                  title: Text('Editar'),
+                                  contentPadding: EdgeInsets.zero,
                                 ),
                               ),
-                            ),
-                            IconButton(
-                              onPressed: () => context.push('/admin/artisans/${artisan.id}/edit'),
-                              icon: Icon(Icons.edit_outlined, size: 16, color: cs.onSurfaceVariant),
-                              visualDensity: VisualDensity.compact,
-                              tooltip: 'Editar artesano',
-                            ),
-                            IconButton(
-                              onPressed: () => _confirmDelete(context, ref),
-                              icon: Icon(Icons.delete_outline, size: 16, color: cs.error),
-                              visualDensity: VisualDensity.compact,
-                              tooltip: 'Eliminar artesano',
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: ListTile(
+                                  leading: Icon(
+                                    Icons.delete_outline,
+                                    color: cs.error,
+                                  ),
+                                  title: Text(
+                                    'Eliminar',
+                                    style: TextStyle(color: cs.error),
+                                  ),
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-
-          Divider(height: 1, color: cs.outlineVariant),
-
-          // Row 2: nombre + wallet (full width)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        artisan.name,
-                        style: tt.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: isActive ? cs.onSurface : cs.onSurfaceVariant,
-                          height: 1.2,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (!isActive) ...[
-                      const SizedBox(width: 8),
-                      _InactiveBadge(cs: cs, tt: tt),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.account_balance_wallet_outlined,
-                      size: 13,
-                      color: artisan.walletAddressUrl.isNotEmpty
-                          ? cs.primary
-                          : cs.outlineVariant,
-                    ),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        artisan.walletAddressUrl.isNotEmpty
-                            ? artisan.walletAddressUrl
-                            : 'Sin wallet',
-                        style: tt.bodySmall?.copyWith(
-                          color: artisan.walletAddressUrl.isNotEmpty
-                              ? cs.onSurfaceVariant
-                              : cs.outlineVariant,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
+  /// Ejecuta una mutación y comunica el resultado con un snackbar.
+  Future<void> _run(
+    BuildContext context,
+    Future<String?> mutation,
+    String successMessage,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final errorColor = Theme.of(context).colorScheme.error;
+    final error = await mutation;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(error ?? successMessage),
+          backgroundColor: error != null ? errorColor : null,
+        ),
+      );
+  }
+
   void _toggleArtisan(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
     final willActivate = !artisan.isActive;
     final verb = willActivate ? 'activar' : 'desactivar';
+    final done = willActivate ? 'activado' : 'desactivado';
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -287,19 +329,25 @@ class _ArtisanCard extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              ref.read(artisansProvider.notifier).toggleActive(artisan.id);
+              _run(
+                context,
+                ref.read(artisansProvider.notifier).toggleActive(artisan.id),
+                '${artisan.name} $done.',
+              );
             },
             child: const Text('Solo el artesano'),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              ref.read(artisansProvider.notifier).toggleActive(artisan.id, cascade: true);
+              _run(
+                context,
+                ref
+                    .read(artisansProvider.notifier)
+                    .toggleActive(artisan.id, cascade: true),
+                '${artisan.name} y sus productos ${done}s.',
+              );
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: cs.inverseSurface,
-              foregroundColor: cs.onInverseSurface,
-            ),
             child: const Text('Artesano y productos'),
           ),
         ],
@@ -313,7 +361,9 @@ class _ArtisanCard extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Eliminar artesano'),
-        content: Text('¿Eliminar a ${artisan.name}? Esta acción no se puede deshacer.'),
+        content: Text(
+          '¿Eliminar a ${artisan.name}? Esta acción no se puede deshacer.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -322,7 +372,11 @@ class _ArtisanCard extends ConsumerWidget {
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              ref.read(artisansProvider.notifier).delete(artisan.id);
+              _run(
+                context,
+                ref.read(artisansProvider.notifier).delete(artisan.id),
+                '${artisan.name} eliminado.',
+              );
             },
             style: FilledButton.styleFrom(
               backgroundColor: cs.error,
@@ -349,26 +403,39 @@ class _ArtisanBanner extends ConsumerWidget {
     final initials = _initials(artisan.name);
     final baseUrl = ref.read(apiClientProvider).baseUrl;
     final rawUrl = artisan.imageUrl;
-    final imageUrl = rawUrl.isNotEmpty ? '$baseUrl${rawUrl.replaceAll('_medium.', '_thumb.')}' : '';
 
-    Widget content = imageUrl.isNotEmpty
-        ? Image.network(
-            imageUrl,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
+    Widget content = rawUrl.isNotEmpty
+        ? AppImage(
+            '$baseUrl${imageVariant(rawUrl, 'thumb')}',
+            fallbackUrl: '$baseUrl$rawUrl',
             cacheWidth: 200,
-            errorBuilder: (_, __, ___) => _initialsBlock(initials, cs, tt),
+            errorIconSize: 24,
           )
         : _initialsBlock(initials, cs, tt);
 
     if (!artisan.isActive) {
       content = ColorFiltered(
         colorFilter: const ColorFilter.matrix([
-          0.2126, 0.7152, 0.0722, 0, 0,
-          0.2126, 0.7152, 0.0722, 0, 0,
-          0.2126, 0.7152, 0.0722, 0, 0,
-          0,      0,      0,      1, 0,
+          0.2126,
+          0.7152,
+          0.0722,
+          0,
+          0,
+          0.2126,
+          0.7152,
+          0.0722,
+          0,
+          0,
+          0.2126,
+          0.7152,
+          0.0722,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
         ]),
         child: Opacity(opacity: 0.55, child: content),
       );
@@ -383,7 +450,7 @@ class _ArtisanBanner extends ConsumerWidget {
       child: Center(
         child: Text(
           initials,
-          style: tt.displayMedium?.copyWith(
+          style: tt.headlineMedium?.copyWith(
             color: cs.onPrimaryContainer.withValues(alpha: 0.35),
             fontWeight: FontWeight.w700,
           ),
@@ -400,34 +467,6 @@ class _ArtisanBanner extends ConsumerWidget {
   }
 }
 
-// ─── Inactive Badge ───────────────────────────────────────────────────────────
-
-class _InactiveBadge extends StatelessWidget {
-  final ColorScheme cs;
-  final TextTheme tt;
-
-  const _InactiveBadge({required this.cs, required this.tt});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: cs.outlineVariant),
-      ),
-      child: Text(
-        'Inactivo',
-        style: tt.labelSmall?.copyWith(
-          color: cs.onSurfaceVariant,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-}
-
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 class _SkeletonList extends StatelessWidget {
@@ -437,8 +476,8 @@ class _SkeletonList extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      itemCount: 5,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      itemCount: 6,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, __) => const _SkeletonCard(),
     );
   }
@@ -453,56 +492,34 @@ class _SkeletonCard extends StatelessWidget {
     final block = cs.surfaceContainerHighest;
 
     return Container(
+      height: 96,
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Column(
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Row 1 skeleton: [foto | acciones]
-          SizedBox(
-            height: 130,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(width: 130, color: block),
-                Container(width: 1, color: cs.outlineVariant),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _Rect(w: 44, h: 20, r: 10, color: block),
-                        const Spacer(),
-                        Row(
-                          children: [
-                            _Rect(w: 72, h: 10, color: block),
-                            const Spacer(),
-                            _Rect(w: 18, h: 18, r: 4, color: block),
-                            const SizedBox(width: 6),
-                            _Rect(w: 18, h: 18, r: 4, color: block),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+          Container(width: 96, color: block),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _Rect(w: 140, h: 14, color: block),
+                  const SizedBox(height: 8),
+                  _Rect(w: 100, h: 10, color: block),
+                  const Spacer(),
+                  _Rect(w: 190, h: 10, color: block),
+                ],
+              ),
             ),
           ),
-          Divider(height: 1, color: cs.outlineVariant),
-          // Row 2 skeleton: nombre + wallet
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Rect(w: 140, h: 13, color: block),
-                const SizedBox(height: 6),
-                _Rect(w: 190, h: 9, color: block),
-              ],
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Center(child: _Rect(w: 44, h: 24, r: 12, color: block)),
           ),
         ],
       ),
@@ -516,7 +533,12 @@ class _Rect extends StatelessWidget {
   final double r;
   final Color color;
 
-  const _Rect({required this.w, required this.h, required this.color, this.r = 4});
+  const _Rect({
+    required this.w,
+    required this.h,
+    required this.color,
+    this.r = 4,
+  });
 
   @override
   Widget build(BuildContext context) {

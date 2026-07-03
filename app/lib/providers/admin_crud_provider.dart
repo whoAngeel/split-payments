@@ -4,10 +4,25 @@ import 'package:openpayments_app/models/artisan.dart';
 import 'package:openpayments_app/providers/api_client_provider.dart';
 import 'package:openpayments_app/providers/auth_provider.dart';
 import 'package:openpayments_app/providers/admin_provider.dart';
+import 'package:openpayments_app/service/api_client.dart';
 
 final artisansProvider = AsyncNotifierProvider<ArtisansNotifier, List<Artisan>>(
   ArtisansNotifier.new,
 );
+
+/// Convierte una excepción de mutación en un mensaje para el usuario.
+/// Nunca expone el error crudo.
+String _friendlyError(Object e, String fallback) {
+  if (e is ApiException) {
+    if (e.statusCode == 409) {
+      return 'No se puede completar: el artesano todavía tiene productos.';
+    }
+    if (e.statusCode >= 500) {
+      return 'El servidor no respondió bien. Intenta de nuevo en un momento.';
+    }
+  }
+  return fallback;
+}
 
 class ArtisansNotifier extends AsyncNotifier<List<Artisan>> {
   int get _galleryId => ref.read(authProvider).valueOrNull?.galleryId ?? 0;
@@ -19,49 +34,109 @@ class ArtisansNotifier extends AsyncNotifier<List<Artisan>> {
   }
 
   Future<void> refresh() async {
-    state = await AsyncValue.guard(() => ref.read(galleryServiceProvider).getArtisans(_galleryId));
+    state = await AsyncValue.guard(
+      () => ref.read(galleryServiceProvider).getArtisans(_galleryId),
+    );
   }
 
-  Future<void> create(String name, String walletAddressUrl, {String imageUrl = '', String bio = '', String location = '', String specialty = '', String craftType = '', String tags = ''}) async {
+  /// Ejecuta una mutación y recarga la lista. Devuelve `null` si todo salió
+  /// bien o un mensaje de error amigable. La lista actual se conserva si la
+  /// mutación falla (un toggle fallido no debe tumbar toda la pantalla).
+  Future<String?> _mutate(
+    Future<void> Function() action,
+    String fallbackError,
+  ) async {
     final service = ref.read(galleryServiceProvider);
-    state = await AsyncValue.guard(() async {
-      await service.createArtisan(_galleryId, name, walletAddressUrl, imageUrl: imageUrl, bio: bio, location: location, specialty: specialty, craftType: craftType, tags: tags);
-      return service.getArtisans(_galleryId);
-    });
+    try {
+      await action();
+    } catch (e) {
+      return _friendlyError(e, fallbackError);
+    }
+    state = await AsyncValue.guard(() => service.getArtisans(_galleryId));
     ref.invalidate(dashboardProvider);
+    return null;
   }
 
-  Future<void> updateArtisan(int artisanId, {String? name, String? walletAddressUrl, String? imageUrl, String? bio, String? location, String? specialty, String? craftType, String? tags}) async {
+  Future<String?> create(
+    String name,
+    String walletAddressUrl, {
+    String imageUrl = '',
+    String bio = '',
+    String location = '',
+    String specialty = '',
+    String craftType = '',
+    String tags = '',
+  }) {
     final service = ref.read(galleryServiceProvider);
-    state = await AsyncValue.guard(() async {
-      await service.updateArtisan(_galleryId, artisanId, name: name, walletAddressUrl: walletAddressUrl, imageUrl: imageUrl, bio: bio, location: location, specialty: specialty, craftType: craftType, tags: tags);
-      return service.getArtisans(_galleryId);
-    });
+    return _mutate(
+      () => service.createArtisan(
+        _galleryId,
+        name,
+        walletAddressUrl,
+        imageUrl: imageUrl,
+        bio: bio,
+        location: location,
+        specialty: specialty,
+        craftType: craftType,
+        tags: tags,
+      ),
+      'No se pudo crear el artesano. Verifica tu conexión e intenta de nuevo.',
+    );
   }
 
-  Future<void> toggleActive(int artisanId, {bool cascade = false}) async {
+  Future<String?> updateArtisan(
+    int artisanId, {
+    String? name,
+    String? walletAddressUrl,
+    String? imageUrl,
+    String? bio,
+    String? location,
+    String? specialty,
+    String? craftType,
+    String? tags,
+  }) {
     final service = ref.read(galleryServiceProvider);
-    state = await AsyncValue.guard(() async {
-      await service.toggleArtisanActive(_galleryId, artisanId, cascade: cascade);
-      return service.getArtisans(_galleryId);
-    });
-    ref.invalidate(dashboardProvider);
-    ref.invalidate(adminProductsProvider);
+    return _mutate(
+      () => service.updateArtisan(
+        _galleryId,
+        artisanId,
+        name: name,
+        walletAddressUrl: walletAddressUrl,
+        imageUrl: imageUrl,
+        bio: bio,
+        location: location,
+        specialty: specialty,
+        craftType: craftType,
+        tags: tags,
+      ),
+      'No se pudieron guardar los cambios. Intenta de nuevo.',
+    );
   }
 
-  Future<void> delete(int artisanId) async {
+  Future<String?> toggleActive(int artisanId, {bool cascade = false}) async {
     final service = ref.read(galleryServiceProvider);
-    state = await AsyncValue.guard(() async {
-      await service.deleteArtisan(_galleryId, artisanId);
-      return service.getArtisans(_galleryId);
-    });
-    ref.invalidate(dashboardProvider);
+    final error = await _mutate(
+      () =>
+          service.toggleArtisanActive(_galleryId, artisanId, cascade: cascade),
+      'No se pudo cambiar el estado del artesano. Intenta de nuevo.',
+    );
+    if (error == null) ref.invalidate(adminProductsProvider);
+    return error;
+  }
+
+  Future<String?> delete(int artisanId) {
+    final service = ref.read(galleryServiceProvider);
+    return _mutate(
+      () => service.deleteArtisan(_galleryId, artisanId),
+      'No se pudo eliminar el artesano. Intenta de nuevo.',
+    );
   }
 }
 
-final adminProductsProvider = AsyncNotifierProvider<AdminProductsNotifier, List<AdminProduct>>(
-  AdminProductsNotifier.new,
-);
+final adminProductsProvider =
+    AsyncNotifierProvider<AdminProductsNotifier, List<AdminProduct>>(
+      AdminProductsNotifier.new,
+    );
 
 class AdminProductsNotifier extends AsyncNotifier<List<AdminProduct>> {
   int get _galleryId => ref.read(authProvider).valueOrNull?.galleryId ?? 0;
@@ -73,41 +148,103 @@ class AdminProductsNotifier extends AsyncNotifier<List<AdminProduct>> {
   }
 
   Future<void> refresh() async {
-    state = await AsyncValue.guard(() => ref.read(galleryServiceProvider).getAdminProducts(_galleryId));
+    state = await AsyncValue.guard(
+      () => ref.read(galleryServiceProvider).getAdminProducts(_galleryId),
+    );
   }
 
-  Future<void> create(int artisanId, String name, int basePrice, String assetCode, {int assetScale = 2, String imageUrl = '', int commissionRate = 0, String description = '', String materials = '', String dimensions = '', String tags = ''}) async {
+  /// Igual que en [ArtisansNotifier._mutate]: la lista sobrevive a una
+  /// mutación fallida y el error vuelve como mensaje amigable.
+  Future<String?> _mutate(
+    Future<void> Function() action,
+    String fallbackError,
+  ) async {
     final service = ref.read(galleryServiceProvider);
-    state = await AsyncValue.guard(() async {
-      await service.createProduct(_galleryId, artisanId, name: name, basePrice: basePrice, assetCode: assetCode, assetScale: assetScale, imageUrl: imageUrl, commissionRate: commissionRate, description: description, materials: materials, dimensions: dimensions, tags: tags);
-      return service.getAdminProducts(_galleryId);
-    });
+    try {
+      await action();
+    } catch (e) {
+      return _friendlyError(e, fallbackError);
+    }
+    state = await AsyncValue.guard(() => service.getAdminProducts(_galleryId));
     ref.invalidate(dashboardProvider);
+    return null;
   }
 
-  Future<void> updateProduct(int productId, {String? name, int? basePrice, String? imageUrl, int? commissionRate, String? description, String? materials, String? dimensions, String? tags}) async {
+  Future<String?> create(
+    int artisanId,
+    String name,
+    int basePrice,
+    String assetCode, {
+    int assetScale = 2,
+    String imageUrl = '',
+    int commissionRate = 0,
+    String description = '',
+    String materials = '',
+    String dimensions = '',
+    String tags = '',
+  }) {
     final service = ref.read(galleryServiceProvider);
-    state = await AsyncValue.guard(() async {
-      await service.updateProduct(_galleryId, productId, name: name, basePrice: basePrice, imageUrl: imageUrl, commissionRate: commissionRate, description: description, materials: materials, dimensions: dimensions, tags: tags);
-      return service.getAdminProducts(_galleryId);
-    });
+    return _mutate(
+      () => service.createProduct(
+        _galleryId,
+        artisanId,
+        name: name,
+        basePrice: basePrice,
+        assetCode: assetCode,
+        assetScale: assetScale,
+        imageUrl: imageUrl,
+        commissionRate: commissionRate,
+        description: description,
+        materials: materials,
+        dimensions: dimensions,
+        tags: tags,
+      ),
+      'No se pudo crear el producto. Verifica tu conexión e intenta de nuevo.',
+    );
   }
 
-  Future<void> toggleActive(int productId) async {
+  Future<String?> updateProduct(
+    int productId, {
+    String? name,
+    int? basePrice,
+    String? imageUrl,
+    int? commissionRate,
+    String? description,
+    String? materials,
+    String? dimensions,
+    String? tags,
+  }) {
     final service = ref.read(galleryServiceProvider);
-    state = await AsyncValue.guard(() async {
-      await service.toggleProductActive(_galleryId, productId);
-      return service.getAdminProducts(_galleryId);
-    });
-    ref.invalidate(dashboardProvider);
+    return _mutate(
+      () => service.updateProduct(
+        _galleryId,
+        productId,
+        name: name,
+        basePrice: basePrice,
+        imageUrl: imageUrl,
+        commissionRate: commissionRate,
+        description: description,
+        materials: materials,
+        dimensions: dimensions,
+        tags: tags,
+      ),
+      'No se pudieron guardar los cambios. Intenta de nuevo.',
+    );
   }
 
-  Future<void> delete(int productId) async {
+  Future<String?> toggleActive(int productId) {
     final service = ref.read(galleryServiceProvider);
-    state = await AsyncValue.guard(() async {
-      await service.deleteProduct(_galleryId, productId);
-      return service.getAdminProducts(_galleryId);
-    });
-    ref.invalidate(dashboardProvider);
+    return _mutate(
+      () => service.toggleProductActive(_galleryId, productId),
+      'No se pudo cambiar el estado del producto. Intenta de nuevo.',
+    );
+  }
+
+  Future<String?> delete(int productId) {
+    final service = ref.read(galleryServiceProvider);
+    return _mutate(
+      () => service.deleteProduct(_galleryId, productId),
+      'No se pudo eliminar el producto. Intenta de nuevo.',
+    );
   }
 }
