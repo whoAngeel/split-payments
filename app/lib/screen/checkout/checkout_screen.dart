@@ -9,6 +9,7 @@ import 'package:openpayments_app/models/checkout.dart';
 import 'package:openpayments_app/models/product.dart';
 import 'package:openpayments_app/providers/checkout_provider.dart';
 import 'package:openpayments_app/providers/api_client_provider.dart';
+import 'package:openpayments_app/widgets/app_image.dart';
 import 'package:openpayments_app/widgets/app_text_field.dart';
 
 import '../../widgets/app_scaffold.dart';
@@ -87,7 +88,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     ),
                     if (checkoutState is AsyncError) ...[
                       const SizedBox(height: 16),
-                      _ErrorBanner(error: checkoutState.error ?? 'Unknown error', cs: cs),
+                      _ErrorBanner(
+                        error: checkoutState.error ?? 'Unknown error',
+                        cs: cs,
+                      ),
                     ],
                     const SizedBox(height: 24),
                   ],
@@ -111,9 +115,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final wallet = prefilledWallet ?? _walletController.text.trim();
     if (wallet.isEmpty) return;
 
-    await ref.read(checkoutProvider.notifier).checkout(
-      CheckoutRequest(productId: product.id, buyerWallet: wallet),
-    );
+    await ref
+        .read(checkoutProvider.notifier)
+        .checkout(CheckoutRequest(productId: product.id, buyerWallet: wallet));
 
     if (!mounted) return;
 
@@ -146,7 +150,11 @@ class _ProductHero extends StatelessWidget {
   final num price;
   final ColorScheme cs;
 
-  const _ProductHero({required this.product, required this.price, required this.cs});
+  const _ProductHero({
+    required this.product,
+    required this.price,
+    required this.cs,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -162,10 +170,11 @@ class _ProductHero extends StatelessWidget {
             height: 96,
             color: cs.surfaceContainerHighest,
             child: product.imageUrl.isNotEmpty
-                ? Image.network(
-                    product.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Icon(Icons.image_outlined, color: cs.outline),
+                ? AppImage(
+                    imageVariant(product.imageUrl, 'thumb'),
+                    fallbackUrl: product.imageUrl,
+                    cacheWidth: 200,
+                    errorIconSize: 24,
                   )
                 : Icon(Icons.image_outlined, color: cs.outline),
           ),
@@ -222,7 +231,9 @@ class _SplitCard extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final artisanAmt = basePrice * split.artisanPercent / 100;
     final galleryAmt = basePrice * split.galleryPercent / 100;
-    final platformAmt = split.platformPercent > 0 ? basePrice * split.platformPercent / 100 : 0.0;
+    final platformAmt = split.platformPercent > 0
+        ? basePrice * split.platformPercent / 100
+        : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -236,7 +247,11 @@ class _SplitCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.verified_user_outlined, size: 14, color: cs.onSurfaceVariant),
+              Icon(
+                Icons.verified_user_outlined,
+                size: 14,
+                color: cs.onSurfaceVariant,
+              ),
               const SizedBox(width: 6),
               Text(
                 'PAYMENT TRANSPARENCY',
@@ -256,33 +271,69 @@ class _SplitCard extends StatelessWidget {
               child: Row(
                 children: [
                   if (split.artisanPercent > 0)
-                    Expanded(flex: split.artisanPercent, child: Container(color: cs.primary)),
+                    Expanded(
+                      flex: split.artisanPercent,
+                      child: Container(color: cs.primary),
+                    ),
                   if (split.galleryPercent > 0)
-                    Expanded(flex: split.galleryPercent, child: Container(color: cs.secondary)),
+                    Expanded(
+                      flex: split.galleryPercent,
+                      child: Container(color: cs.secondary),
+                    ),
                   if (split.platformPercent > 0)
-                    Expanded(flex: split.platformPercent, child: Container(color: cs.tertiary)),
+                    Expanded(
+                      flex: split.platformPercent,
+                      child: Container(color: cs.tertiary),
+                    ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 12),
-          _splitRow(context, cs.primary, 'Artisan receives', artisanAmt, split.artisanPercent, product),
+          _splitRow(
+            context,
+            cs.primary,
+            'Artisan receives',
+            artisanAmt,
+            split.artisanPercent,
+            product,
+          ),
           if (split.galleryPercent > 0) ...[
             const SizedBox(height: 8),
-            _splitRow(context, cs.onSurfaceVariant, 'Gallery receives', galleryAmt, split.galleryPercent, product),
+            _splitRow(
+              context,
+              cs.onSurfaceVariant,
+              'Gallery receives',
+              galleryAmt,
+              split.galleryPercent,
+              product,
+            ),
           ],
           if (split.platformPercent > 0) ...[
             const SizedBox(height: 8),
-            _splitRow(context, cs.tertiary, 'Platform fee', platformAmt, split.platformPercent, product),
+            _splitRow(
+              context,
+              cs.tertiary,
+              'Platform fee',
+              platformAmt,
+              split.platformPercent,
+              product,
+            ),
           ],
           Divider(height: 24, color: cs.outlineVariant),
           Row(
             children: [
-              Text('Base price', style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+              Text(
+                'Base price',
+                style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+              ),
               const Spacer(),
               Text(
                 '${product.assetCode} ${basePrice.toStringAsFixed(product.assetScale)}',
-                style: tt.bodySmall?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w600),
+                style: tt.bodySmall?.copyWith(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -308,12 +359,19 @@ class _SplitCard extends StatelessWidget {
           decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
-        Expanded(child: Text(label, style: tt.bodySmall?.copyWith(color: cs.onSurface))),
+        Expanded(
+          child: Text(
+            label,
+            style: tt.bodySmall?.copyWith(color: cs.onSurface),
+          ),
+        ),
         Text(
           '${product.assetCode} ${amount.toStringAsFixed(product.assetScale)} ($percent%)',
           style: tt.bodySmall?.copyWith(
             color: dotColor == cs.primary ? cs.primary : cs.onSurfaceVariant,
-            fontWeight: dotColor == cs.primary ? FontWeight.w600 : FontWeight.w400,
+            fontWeight: dotColor == cs.primary
+                ? FontWeight.w600
+                : FontWeight.w400,
           ),
         ),
       ],
@@ -359,7 +417,11 @@ class _WalletSection extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.account_balance_wallet_outlined, color: cs.primary, size: 20),
+                Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: cs.primary,
+                  size: 20,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -407,9 +469,9 @@ class _ErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               error.toString(),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: cs.onErrorContainer,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: cs.onErrorContainer),
             ),
           ),
         ],
@@ -508,16 +570,16 @@ class _CtaBarState extends State<_CtaBar> with SingleTickerProviderStateMixin {
                       child: InkWell(
                         onTap: widget.isLoading ? null : widget.onPay,
                         splashColor: cs.onInverseSurface.withValues(alpha: 0.1),
-                        highlightColor: cs.onInverseSurface.withValues(alpha: 0.06),
+                        highlightColor: cs.onInverseSurface.withValues(
+                          alpha: 0.06,
+                        ),
                         child: Center(
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 220),
                             switchInCurve: Curves.easeOut,
                             switchOutCurve: Curves.easeIn,
-                            transitionBuilder: (child, anim) => FadeTransition(
-                              opacity: anim,
-                              child: child,
-                            ),
+                            transitionBuilder: (child, anim) =>
+                                FadeTransition(opacity: anim, child: child),
                             child: widget.isLoading
                                 ? Row(
                                     key: const ValueKey('loading'),
@@ -537,7 +599,11 @@ class _CtaBarState extends State<_CtaBar> with SingleTickerProviderStateMixin {
                                     key: const ValueKey('idle'),
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.payments_outlined, size: 20, color: cs.onInverseSurface),
+                                      Icon(
+                                        Icons.payments_outlined,
+                                        size: 20,
+                                        color: cs.onInverseSurface,
+                                      ),
                                       const SizedBox(width: 10),
                                       Text(
                                         'Pay with Open Payments',

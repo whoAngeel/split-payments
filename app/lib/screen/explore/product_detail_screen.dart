@@ -9,6 +9,7 @@ import '../../models/product_detail.dart';
 import '../../providers/gallery_provider.dart';
 import '../../providers/checkout_provider.dart';
 import '../../providers/api_client_provider.dart';
+import '../../widgets/app_image.dart';
 
 class ProductDetailScreen extends ConsumerWidget {
   final int productId;
@@ -81,64 +82,65 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 340,
-            pinned: false,
-            automaticallyImplyLeading: false,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            backgroundColor: cs.surface,
-            flexibleSpace: FlexibleSpaceBar(
-              background: _ImageGallery(
-                images: allImages,
-                pageIndex: _pageIndex,
-                controller: _pageController,
-                onPageChanged: (i) => setState(() => _pageIndex = i),
-                cs: cs,
-                baseUrl: baseUrl,
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 340,
+              pinned: false,
+              automaticallyImplyLeading: false,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              backgroundColor: cs.surface,
+              flexibleSpace: FlexibleSpaceBar(
+                background: _ImageGallery(
+                  images: allImages,
+                  pageIndex: _pageIndex,
+                  controller: _pageController,
+                  onPageChanged: (i) => setState(() => _pageIndex = i),
+                  cs: cs,
+                  baseUrl: baseUrl,
+                ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (detail.tags.isNotEmpty) ...[
-                    _Tags(tags: detail.tags, cs: cs),
-                    const SizedBox(height: 12),
-                  ],
-                  _Header(detail: detail, price: price),
-                  const SizedBox(height: 20),
-                  if (detail.materials.isNotEmpty || detail.dimensions.isNotEmpty) ...[
-                    _Specs(detail: detail, cs: cs),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (detail.tags.isNotEmpty) ...[
+                      _Tags(tags: detail.tags, cs: cs),
+                      const SizedBox(height: 12),
+                    ],
+                    _Header(detail: detail, price: price),
                     const SizedBox(height: 20),
+                    if (detail.materials.isNotEmpty ||
+                        detail.dimensions.isNotEmpty) ...[
+                      _Specs(detail: detail, cs: cs),
+                      const SizedBox(height: 20),
+                    ],
+                    if (detail.split != null) ...[
+                      _PaymentTransparency(
+                        split: detail.split!,
+                        basePrice: detail.basePrice,
+                        assetCode: detail.assetCode,
+                        assetScale: detail.assetScale,
+                        cs: cs,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    if (detail.description.isNotEmpty) ...[
+                      _Description(detail: detail, cs: cs),
+                      const SizedBox(height: 28),
+                    ],
+                    Divider(height: 1, color: cs.outlineVariant),
+                    const SizedBox(height: 24),
+                    _ArtisanRow(detail: detail, cs: cs, baseUrl: baseUrl),
+                    const SizedBox(height: 120),
                   ],
-                  if (detail.split != null) ...[
-                    _PaymentTransparency(
-                      split: detail.split!,
-                      basePrice: detail.basePrice,
-                      assetCode: detail.assetCode,
-                      assetScale: detail.assetScale,
-                      cs: cs,
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                  if (detail.description.isNotEmpty) ...[
-                    _Description(detail: detail, cs: cs),
-                    const SizedBox(height: 28),
-                  ],
-                  Divider(height: 1, color: cs.outlineVariant),
-                  const SizedBox(height: 24),
-                  _ArtisanRow(detail: detail, cs: cs, baseUrl: baseUrl),
-                  const SizedBox(height: 120),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
       bottomNavigationBar: SafeArea(
@@ -224,10 +226,11 @@ class _ImageGallery extends StatelessWidget {
           onPageChanged: onPageChanged,
           itemBuilder: (context, index) {
             return images[index].isNotEmpty
-                ? Image.network(
-                    images[index].startsWith('http') ? images[index] : '$baseUrl${images[index]}',
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _placeholder(),
+                ? AppImage(
+                    images[index].startsWith('http')
+                        ? images[index]
+                        : '$baseUrl${images[index]}',
+                    cacheWidth: 1000,
                   )
                 : _placeholder();
           },
@@ -324,9 +327,7 @@ class _Header extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           detail.name,
-          style: tt.headlineMedium?.copyWith(
-            color: cs.onSurface,
-          ),
+          style: tt.headlineMedium?.copyWith(color: cs.onSurface),
         ),
         const SizedBox(height: 10),
         Text(
@@ -355,7 +356,9 @@ class _Specs extends StatelessWidget {
 
     if (!hasBoth) {
       final label = detail.materials.isNotEmpty ? 'Materials' : 'Dimensions';
-      final value = detail.materials.isNotEmpty ? detail.materials : detail.dimensions;
+      final value = detail.materials.isNotEmpty
+          ? detail.materials
+          : detail.dimensions;
       return _specCell(tt, label, value);
     }
 
@@ -422,7 +425,11 @@ class _PaymentTransparency extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.verified_user_outlined, size: 14, color: cs.onSurfaceVariant),
+              Icon(
+                Icons.verified_user_outlined,
+                size: 14,
+                color: cs.onSurfaceVariant,
+              ),
               const SizedBox(width: 6),
               Text(
                 'PAYMENT TRANSPARENCY',
@@ -510,13 +517,18 @@ class _PaymentTransparency extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(label, style: tt.bodySmall?.copyWith(color: cs.onSurface)),
+          child: Text(
+            label,
+            style: tt.bodySmall?.copyWith(color: cs.onSurface),
+          ),
         ),
         Text(
           '$assetCode ${amount.toStringAsFixed(assetScale)} ($percent%)',
           style: tt.bodySmall?.copyWith(
             color: dotColor == cs.primary ? cs.primary : cs.onSurfaceVariant,
-            fontWeight: dotColor == cs.primary ? FontWeight.w600 : FontWeight.w400,
+            fontWeight: dotColor == cs.primary
+                ? FontWeight.w600
+                : FontWeight.w400,
           ),
         ),
       ],
@@ -559,7 +571,11 @@ class _ArtisanRow extends StatelessWidget {
   final ColorScheme cs;
   final String baseUrl;
 
-  const _ArtisanRow({required this.detail, required this.cs, this.baseUrl = ''});
+  const _ArtisanRow({
+    required this.detail,
+    required this.cs,
+    this.baseUrl = '',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -574,7 +590,11 @@ class _ArtisanRow extends StatelessWidget {
           radius: 28,
           backgroundColor: cs.primaryContainer,
           backgroundImage: detail.artisan.imageUrl.isNotEmpty
-              ? NetworkImage(detail.artisan.imageUrl.startsWith('http') ? detail.artisan.imageUrl : '$baseUrl${detail.artisan.imageUrl}')
+              ? NetworkImage(
+                  detail.artisan.imageUrl.startsWith('http')
+                      ? detail.artisan.imageUrl
+                      : '$baseUrl${detail.artisan.imageUrl}',
+                )
               : null,
           child: detail.artisan.imageUrl.isEmpty
               ? Text(

@@ -45,6 +45,7 @@ func NewUploadService(endpoint, accessKey, secretKey, bucket string) (*UploadSer
 
 type UploadResult struct {
 	ThumbnailURL string `json:"thumbnail_url"`
+	SmallURL     string `json:"small_url"`
 	MediumURL    string `json:"medium_url"`
 }
 
@@ -62,35 +63,38 @@ func (s *UploadService) Upload(ctx context.Context, reader io.Reader, filename, 
 
 	base := prefix + "/" + id
 
-	thumb := imaging.Fill(img, 200, 200, imaging.Center, imaging.Lanczos)
-	medium := imaging.Fit(img, 800, 800, imaging.Lanczos)
-
-	thumbKey := base + "_thumb.jpg"
-	mediumKey := base + "_medium.jpg"
-
-	var thumbBuf, mediumBuf bytes.Buffer
-	if err := imaging.Encode(&thumbBuf, thumb, imaging.JPEG, imaging.JPEGQuality(72)); err != nil {
-		return nil, fmt.Errorf("encoding thumb: %w", err)
-	}
-	if err := imaging.Encode(&mediumBuf, medium, imaging.JPEG, imaging.JPEGQuality(85)); err != nil {
-		return nil, fmt.Errorf("encoding medium: %w", err)
-	}
-
-	if _, err := s.client.PutObject(ctx, s.bucket, thumbKey, &thumbBuf, int64(thumbBuf.Len()), minio.PutObjectOptions{
-		ContentType: "image/jpeg",
-	}); err != nil {
-		return nil, fmt.Errorf("uploading thumb: %w", err)
+	// Tres variantes: thumb (avatares), small (cards en listas) y medium
+	// (detalle). Content-addressed por UUID: nunca cambian, el proxy los
+	// cachea como inmutables.
+	variants := []struct {
+		suffix  string
+		img     image.Image
+		quality int
+	}{
+		{"_thumb.jpg", imaging.Fill(img, 200, 200, imaging.Center, imaging.Lanczos), 72},
+		{"_small.jpg", imaging.Fit(img, 400, 400, imaging.Lanczos), 80},
+		{"_medium.jpg", imaging.Fit(img, 800, 800, imaging.Lanczos), 85},
 	}
 
-	if _, err := s.client.PutObject(ctx, s.bucket, mediumKey, &mediumBuf, int64(mediumBuf.Len()), minio.PutObjectOptions{
-		ContentType: "image/jpeg",
-	}); err != nil {
-		return nil, fmt.Errorf("uploading medium: %w", err)
+	urls := make(map[string]string, len(variants))
+	for _, v := range variants {
+		var buf bytes.Buffer
+		if err := imaging.Encode(&buf, v.img, imaging.JPEG, imaging.JPEGQuality(v.quality)); err != nil {
+			return nil, fmt.Errorf("encoding %s: %w", v.suffix, err)
+		}
+		key := base + v.suffix
+		if _, err := s.client.PutObject(ctx, s.bucket, key, &buf, int64(buf.Len()), minio.PutObjectOptions{
+			ContentType: "image/jpeg",
+		}); err != nil {
+			return nil, fmt.Errorf("uploading %s: %w", v.suffix, err)
+		}
+		urls[v.suffix] = "/" + s.bucket + "/" + key
 	}
 
 	return &UploadResult{
-		ThumbnailURL: "/" + s.bucket + "/" + thumbKey,
-		MediumURL:    "/" + s.bucket + "/" + mediumKey,
+		ThumbnailURL: urls["_thumb.jpg"],
+		SmallURL:     urls["_small.jpg"],
+		MediumURL:    urls["_medium.jpg"],
 	}, nil
 }
 

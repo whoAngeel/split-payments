@@ -9,6 +9,7 @@ import '../../models/product.dart';
 import '../../providers/checkout_provider.dart';
 import '../../providers/api_client_provider.dart';
 import '../../service/ws_service.dart';
+import '../../widgets/app_image.dart';
 
 class PaymentConfirmationScreen extends ConsumerStatefulWidget {
   final String sessionId;
@@ -25,7 +26,8 @@ class PaymentConfirmationScreen extends ConsumerStatefulWidget {
       _PaymentConfirmationScreenState();
 }
 
-class _PaymentConfirmationScreenState extends ConsumerState<PaymentConfirmationScreen> {
+class _PaymentConfirmationScreenState
+    extends ConsumerState<PaymentConfirmationScreen> {
   final _ws = WsService();
   late String _status;
   Timer? _timeout;
@@ -100,22 +102,27 @@ class _PaymentConfirmationScreenState extends ConsumerState<PaymentConfirmationS
           const SizedBox(height: 24),
           Text(
             'Processing your payment...',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Text(
             'Your wallet is being debited and the split payments are being sent to the artisan and gallery.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           _infoRow(cs, Icons.timer_outlined, 'Estimated time', '10–30 seconds'),
           const SizedBox(height: 8),
-          _infoRow(cs, Icons.receipt_long_outlined, 'Session', widget.sessionId.substring(0, 8)),
+          _infoRow(
+            cs,
+            Icons.receipt_long_outlined,
+            'Session',
+            widget.sessionId.substring(0, 8),
+          ),
         ],
       ),
     );
@@ -142,9 +149,9 @@ class _PaymentConfirmationScreenState extends ConsumerState<PaymentConfirmationS
           Text(
             'Payment Successful!',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: cs.primary,
-                ),
+              fontWeight: FontWeight.w700,
+              color: cs.primary,
+            ),
           ),
           const SizedBox(height: 24),
           if (product != null) _productSummary(cs, product),
@@ -188,16 +195,16 @@ class _PaymentConfirmationScreenState extends ConsumerState<PaymentConfirmationS
           Text(
             'Payment Failed',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: cs.error,
-                ),
+              fontWeight: FontWeight.w700,
+              color: cs.error,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'The payment could not be completed. Your wallet has not been charged.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -240,7 +247,12 @@ class _PaymentConfirmationScreenState extends ConsumerState<PaymentConfirmationS
             child: product.imageUrl.isNotEmpty
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(product.imageUrl, fit: BoxFit.cover),
+                    child: AppImage(
+                      imageVariant(product.imageUrl, 'thumb'),
+                      fallbackUrl: product.imageUrl,
+                      cacheWidth: 150,
+                      errorIconSize: 20,
+                    ),
                   )
                 : Icon(Icons.image_outlined, color: cs.outline),
           ),
@@ -249,22 +261,26 @@ class _PaymentConfirmationScreenState extends ConsumerState<PaymentConfirmationS
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(product.name,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        )),
+                Text(
+                  product.name,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 2),
-                Text(product.artisanName,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        )),
+                Text(
+                  product.artisanName,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   '${product.assetCode} ${price.toStringAsFixed(product.assetScale)}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: cs.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: cs.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -284,10 +300,12 @@ class _PaymentConfirmationScreenState extends ConsumerState<PaymentConfirmationS
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Transaction Summary',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  )),
+          Text(
+            'Transaction Summary',
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 12),
           _summaryRow(cs, 'Session ID', widget.sessionId.substring(0, 8)),
           const SizedBox(height: 6),
@@ -304,15 +322,19 @@ class _PaymentConfirmationScreenState extends ConsumerState<PaymentConfirmationS
   Widget _summaryRow(ColorScheme cs, String label, String value) {
     return Row(
       children: [
-        Text(label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                )),
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+        ),
         const Spacer(),
-        Text(value,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                )),
+        Text(
+          value,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+        ),
       ],
     );
   }
@@ -323,15 +345,19 @@ class _PaymentConfirmationScreenState extends ConsumerState<PaymentConfirmationS
       children: [
         Icon(icon, size: 16, color: cs.onSurfaceVariant),
         const SizedBox(width: 8),
-        Text(label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                )),
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+        ),
         const SizedBox(width: 8),
-        Text(value,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                )),
+        Text(
+          value,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+        ),
       ],
     );
   }

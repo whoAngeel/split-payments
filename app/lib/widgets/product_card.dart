@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/product.dart';
 import 'app_card.dart';
+import 'app_image.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -30,7 +31,12 @@ class ProductCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _ImageSection(product: product, cs: cs, onFavorite: onFavorite, baseUrl: baseUrl),
+          _ImageSection(
+            product: product,
+            cs: cs,
+            onFavorite: onFavorite,
+            baseUrl: baseUrl,
+          ),
           _ContentSection(product: product, cs: cs, tt: tt, onBuy: onBuy),
         ],
       ),
@@ -60,17 +66,26 @@ class _ImageSection extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: cs.surfaceContainerHighest,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
             ),
             child: product.imageUrl.isNotEmpty
                 ? ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                    child: Image.network(
-                      product.imageUrl.startsWith('http') ? product.imageUrl : '$baseUrl${product.imageUrl}',
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      errorBuilder: (_, __, ___) => _placeholder(),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    child: AppImage(
+                      imageVariant(
+                        product.imageUrl.startsWith('http')
+                            ? product.imageUrl
+                            : '$baseUrl${product.imageUrl}',
+                        'small',
+                      ),
+                      fallbackUrl: product.imageUrl.startsWith('http')
+                          ? product.imageUrl
+                          : '$baseUrl${product.imageUrl}',
+                      cacheWidth: 500,
                     ),
                   )
                 : _placeholder(),
@@ -191,7 +206,9 @@ class _ContentSection extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: cs.inverseSurface,
                 foregroundColor: cs.onInverseSurface,
-                textStyle: tt.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+                textStyle: tt.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),

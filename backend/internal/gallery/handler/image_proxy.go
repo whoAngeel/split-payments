@@ -47,8 +47,17 @@ func (h *ImageProxyHandler) Serve(c *gin.Context) {
 		}
 	}
 
+	// Los objetos son content-addressed (UUID en el nombre): nunca cambian,
+	// cache agresivo es seguro.
 	c.Header("Content-Type", contentType)
-	c.Header("Cache-Control", "public, max-age=86400")
+	c.Header("Cache-Control", "public, max-age=31536000, immutable")
+	if info.ETag != "" {
+		c.Header("ETag", info.ETag)
+		if match := c.GetHeader("If-None-Match"); match != "" && match == info.ETag {
+			c.Status(http.StatusNotModified)
+			return
+		}
+	}
 	c.Status(http.StatusOK)
 	io.Copy(c.Writer, obj)
 }
