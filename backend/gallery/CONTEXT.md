@@ -14,9 +14,23 @@ _Avoid_: Creator, maker, seller
 A venue or platform that sells products on behalf of artisans. Receives a commission from each split payment.
 _Avoid_: Shop, store, venue
 
+**Gallery Admin**:
+The user who owns a Gallery. Responsible for managing artisans, products, and commission. A User becomes a Gallery Admin at registration and can own exactly one Gallery.
+_Avoid_: Operator, manager, seller
+
 **Buyer**:
-A person who purchases a product and makes a single payment that is split between the gallery and the artisan.
+A person who purchases a product and makes a single payment that is split between the gallery and the artisan. Buyers cannot create or manage galleries.
 _Avoid_: Customer, client, purchaser
+
+**Role**:
+A User's classification: `buyer` or `gallery_admin`. Determined at registration. Stored on the User record and carried in the JWT. A `gallery_admin` has exactly one Gallery; a `buyer` has none.
+_Avoid_: Permission, user type
+
+### Entity States
+
+**Active Status**:
+A boolean flag (`is_active`) on Artisan and Product. When `false`, the entity is hidden from public endpoints. Gallery Admins see all entities regardless of status. Toggled via dedicated endpoints, not through update.
+_Avoid_: Enabled, published, visible
 
 ### Pricing
 

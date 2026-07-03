@@ -63,3 +63,34 @@ See `docs/adr/`:
 - CONTEXT.md files define domain language per context
 - Use `context.Context` as first param in Go
 - Errors wrapped with `fmt.Errorf("...: %w", err)`
+
+## Flutter State (Riverpod)
+
+**Regla: todo provider cuyo dato depende de la sesión (galleryId, userId, rol)
+debe hacer `ref.watch(authProvider)` dentro de `build()` — nunca solo `ref.read`.**
+
+- `ref.read` en `build()` no suscribe: al cambiar de cuenta el provider conserva
+  en memoria los datos de la sesión anterior y la UI los pinta (fuga de datos
+  entre cuentas). Bug real: al cambiar de galería se veían los artesanos de la
+  otra cuenta.
+- Con `ref.watch(authProvider)`, cualquier cambio de sesión (login/logout/cambio
+  de cuenta) reconstruye el provider → estado loading → datos correctos.
+- `ref.read` está bien en métodos de mutación/refresh (consultas puntuales) y
+  para servicios sin estado (`galleryServiceProvider`, `apiClientProvider`).
+- Referencia: `payments_provider.dart`, `admin_crud_provider.dart`,
+  `admin_provider.dart` (todos hacen watch en `build()`).
+
+## Flutter Navigation (go_router)
+
+Two navigation modes — using the wrong one causes back gesture to close the app:
+
+| Tipo | Método | Cuándo |
+|------|--------|--------|
+| Tab / shell | `context.go('/ruta')` | Vistas dentro del `ShellRoute` (Explorar, Historial) |
+| Detalle / overlay | `context.push('/ruta')` | Vistas encima del shell (Checkout, Cuenta, Confirmación) |
+
+**Regla:** si la vista vive en el `ShellRoute` → `go`. Si está fuera → `push` + su propio `Scaffold` con `AppBar` (back button aparece automático).
+
+Rutas actuales:
+- Shell (bottom nav): `/explorar`, `/orders`
+- Top-level (push): `/checkout`, `/account`, `/payment/complete`, `/login`, `/register`

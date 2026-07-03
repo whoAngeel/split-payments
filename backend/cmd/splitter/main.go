@@ -32,12 +32,13 @@ func main() {
 		logger.Fatal("op client", "err", err)
 	}
 
-	paymentService := service.NewPaymentService(opClient, logger)
+	paymentService := service.NewPaymentService(opClient, logger, cfg.PublicURL)
 
 	healthHandler := handler.NewHealthHandler(logger)
 	splitHandler := handler.NewSplitHandler(logger, paymentService)
 
 	router.GET("/health", healthHandler.Health)
+	router.GET("/ws/:session_id", handler.WSConnect)
 	router.GET("/split/callback", splitHandler.SplitCallback)
 
 	api := router.Group("/")
@@ -56,5 +57,3 @@ func main() {
 		logger.Fatal("server failed", "err", err)
 	}
 }
-
-

@@ -18,7 +18,7 @@ func AuthRequired(svc *service.AuthService) gin.HandlerFunc {
 		}
 
 		token := strings.TrimPrefix(header, "Bearer ")
-		userID, err := svc.ValidateToken(token)
+		userID, role, galleryID, err := svc.ValidateToken(token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 			c.Abort()
@@ -26,6 +26,8 @@ func AuthRequired(svc *service.AuthService) gin.HandlerFunc {
 		}
 
 		c.Set("userID", userID)
+		c.Set("role", role)
+		c.Set("galleryID", galleryID)
 		c.Next()
 	}
 }
