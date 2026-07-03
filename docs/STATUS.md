@@ -16,7 +16,9 @@
 | Comisión por producto | ✅ Completo |
 | Buyer Explore + detalle | ✅ Completo |
 | Buyer Órdenes | ✅ (si splitter corre) |
-| Dashboard admin | ✅ Básico (métricas) |
+| Dashboard admin | ✅ Métricas + ingresos + pagos recientes |
+| Pagos del operador (admin) | ✅ Historial con filtros + resumen |
+| UX admin (feedback, validación inline, componentes unificados) | ✅ Completo |
 | Flujo de pago (checkout) | ✅ Funciona en físico, falla en emulador |
 
 ---
@@ -58,6 +60,10 @@
 **Dashboard** `GET /galleries/:gid`
 - Gallery info + conteos: active/total artisans, active/total products
 
+**Pagos por galería** `GET /galleries/:gid/payments` (RequireGalleryOwner)
+- Devuelve `{summary, payments}`: lista ordenada desc con producto/artesano/galería precargados
+- Summary agregado: `total_sold`, `gallery_earned`, `completed_count`, `pending_count` (montos en unidades menores)
+
 **Explore** `GET /api/explore/products`, `GET /api/explore/products/:id`
 - Filtra `is_active=true` (producto y artesano)
 - ProductDetailResponse: split, images, tags, artisan info
@@ -71,26 +77,39 @@
 - Logout limpia token, va a login
 
 **Admin — Dashboard**
-- Métricas: artesanos activos/total, productos activos/total
+- Métricas tappables (navegan a su tab): artesanos activos/total, productos activos/total
+- Card "Ingresos": total vendido + comisión de galería + badge de pendientes, tap → historial
+- "Pagos recientes" (últimos 3) con "Ver todos"
 - Nombre de galería, pull-to-refresh
 
+**Admin — Pagos** (`/admin/payments`)
+- Resumen: total vendido, comisión ganada, pendientes
+- Filtros por chip: Todos / Completados / Pendientes / Fallidos
+- Reutiliza `PaymentCard` (localizada a español) con split por pago
+
 **Admin — Artesanos**
-- Lista con foto (thumb), nombre, ubicación/especialidad, wallet, toggle
-- Crear/editar: form con 8 campos + cámara/galería para foto
-- Preview de imagen subida en el form (usa medium URL)
-- Toggle con diálogo "cascada" (solo artesano / con productos)
-- Eliminar con confirmación
-- Vista de productos por artesano, crear producto desde ahí
+- Card: nombre primero, especialidad · ubicación, wallet (aviso en rojo si falta), foto thumb
+- Tap en card → productos del artesano; switch + menú overflow (Editar/Eliminar)
+- Crear/editar: form con validación inline (nombre min 2, wallet `https://`) + cámara/galería
+- Toggle con diálogo "cascada" (solo artesano / con productos), snackbar de resultado
+- Eliminar con confirmación + snackbar (409 → mensaje "todavía tiene productos")
 
 **Admin — Productos**
-- Lista plana con toggle, delete, tap → detalle
-- Detalle: imagen principal, precio, comisión, descripción, materiales, dimensiones, tags, galería de imágenes (contador 3/5, add/delete)
-- Editar: form con todos los campos + imagen (precarga desde API)
-- Refresh post-edit (await push + reload)
+- Card compartida `AdminProductCard` (lista global y por artesano): tap → detalle, switch con Semantics
+- Crear desde el tab: FAB → picker de artesano (bottom sheet); si no hay artesanos, redirige a crearlos
+- Form con validación inline, input formatters (precio/comisión) y preview del split en vivo
+- Detalle: imagen principal, precio, comisión, descripción, materiales, dimensiones, tags, galería de imágenes (add/delete con snackbar), eliminar aquí (no en la lista)
+- Refresh post-edit; toggle en vista de artesano invalida la lista global
 
 **Admin — Ajustes**
 - Card de perfil (nombre, email) con tap → cuenta editable
 - Botón logout
+
+**UX transversal del admin**
+- Mutaciones devuelven error amigable (`Future<String?>`); una mutación fallida ya no tumba la lista
+- Snackbars de éxito/error en toda mutación; sin errores crudos al usuario
+- FABs y acciones primarias en terracota (`cs.primary`); destructivo solo en `cs.error`
+- Targets táctiles ≥48px; fix de contraste en labels "Galería %" (antes ilegibles con `secondary`)
 
 **Buyer — Explore**
 - Grid de productos con foto, nombre, precio, artesano, split
@@ -105,8 +124,8 @@
 - Logout
 
 **Validaciones**
-- Artisan: nombre requerido (min 2 chars), wallet debe empezar con `https://`
-- Product: nombre requerido, precio > 0, comisión 0-100
+- Artisan: nombre requerido (min 2 chars), wallet debe empezar con `https://` — inline al escribir
+- Product: nombre requerido, precio > 0, comisión 0-100 — inline + input formatters
 - Imágenes: máximo 5 por producto
 
 ---
@@ -122,7 +141,7 @@
 - [ ] **Vista de producto en Explore** — cuando un producto se crea con foto, thumbnail no siempre se ve (URL relativa en algunos contextos)
 
 ### Prioridad media
-- [ ] **Dashboard avanzado** — pagos completados, ingresos estimados, gráficos
+- [ ] **Gráficos en dashboard** — tendencia de ventas por periodo (pagos e ingresos ya están ✅)
 - [ ] **Estadísticas** por artesano, por producto
 - [ ] **Notificaciones** (WebSocket) para cambios de estado, pagos
 - [ ] **Exportar datos** (CSV)
@@ -133,7 +152,7 @@
 
 ### Prioridad baja / ideas
 - [ ] Onboarding para nuevos admins
-- [ ] Vista previa del split al crear producto
+- [x] Vista previa del split al crear producto ✅
 - [ ] Categorías de productos
 - [ ] Productos destacados
 - [ ] Auditoría de cambios
@@ -153,7 +172,7 @@
 
 ```
 backend/
-├── cmd/gallery/main.go          ─ 31 rutas, auth + admin + upload
+├── cmd/gallery/main.go          ─ 32 rutas, auth + admin + upload + pagos por galería
 ├── cmd/splitter/main.go         ─ split payment engine
 ├── cmd/seed/main.go             ─ datos de prueba
 ├── internal/gallery/
@@ -171,9 +190,10 @@ app/lib/
 ├── router/                      ─ app_router (dual-shell)
 ├── screen/
 │   ├── admin/
-│   │   ├── dashboard/
+│   │   ├── dashboard/           ─ métricas + ingresos + pagos recientes
 │   │   ├── artisans/            ─ list, form, products
 │   │   ├── products/            ─ list, form, detail
+│   │   ├── payments/            ─ historial con filtros por estado
 │   │   └── settings/
 │   ├── auth/                    ─ login, register
 │   ├── explore/                 ─ explore, product_detail
@@ -182,7 +202,7 @@ app/lib/
 │   ├── account/
 │   └── payment/
 ├── service/                     ─ api_client, auth, gallery, checkout, ws, logger
-└── widgets/                     ─ app_*, product_card, admin_shell, split_bar, status_badge
+└── widgets/                     ─ app_*, product_card, admin_product_card, payment_card, admin_shell, split_bar, status_badge
 
 docs/
 ├── adr/                         ─ 0001-0005
