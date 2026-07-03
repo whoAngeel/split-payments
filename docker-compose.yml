@@ -5,24 +5,24 @@ services:
       dockerfile: Dockerfile.gallery
     container_name: openpayments-gallery
     ports:
-      - "4000:4000"
+      - "4003:4000"
     environment:
-      DATABASE_URL: postgres://openpayments:openpayments@openpayments-postgres:5432/openpayments?sslmode=disable
+      DATABASE_URL: postgres://openpayments:${DB_PASSWORD:-openpayments}@host.docker.internal:5433/openpayments?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       SPLITTER_URL: http://openpayments-splitter:4001
       SPLITTER_API_KEY: ${SPLITTER_API_KEY:-dev-splitter-key}
       INVITE_CODE: ${INVITE_CODE:-}
-      MINIO_ENDPOINT: openpayments-minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-192.168.1.21:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
       MINIO_BUCKET: products
       WALLET_ADDRESS_URL: ${WALLET_ADDRESS_URL}
       PRIVATE_KEY_PATH: ${PRIVATE_KEY_PATH:-./private.key}
       KEY_ID: ${KEY_ID}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_FORMAT: ${LOG_FORMAT:-json}
-    networks:
-      - backend_default
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   splitter:
@@ -31,21 +31,15 @@ services:
       dockerfile: Dockerfile.splitter
     container_name: openpayments-splitter
     ports:
-      - "4001:4001"
+      - "4004:4001"
     environment:
       WALLET_ADDRESS_URL: ${WALLET_ADDRESS_URL}
       PRIVATE_KEY_PATH: ${PRIVATE_KEY_PATH:-./private.key}
       KEY_ID: ${KEY_ID}
       SPLITTER_API_KEY: ${SPLITTER_API_KEY:-dev-splitter-key}
-      SPLITTER_PUBLIC_URL: ${SPLITTER_PUBLIC_URL:-http://localhost:4001}
+      SPLITTER_PUBLIC_URL: ${SPLITTER_PUBLIC_URL:-http://192.168.1.21:4004}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       LOG_FORMAT: ${LOG_FORMAT:-json}
-    networks:
-      - backend_default
     depends_on:
       - gallery
     restart: unless-stopped
-
-networks:
-  backend_default:
-    external: true
