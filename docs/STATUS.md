@@ -4,22 +4,24 @@
 
 ## Progreso general
 
-| Área | Estado |
-|---|---|
-| Roles (buyer vs gallery_admin) | ✅ Completo |
-| Auth (JWT, middleware, refresh) | ✅ Completo |
-| Artisan CRUD | ✅ Completo |
-| Product CRUD | ✅ Completo |
-| Upload de imágenes (MinIO) | ✅ Completo |
-| Perfil editable (name, wallet) | ✅ Completo |
-| Validaciones de formularios | ✅ Completo |
-| Comisión por producto | ✅ Completo |
-| Buyer Explore + detalle | ✅ Completo |
-| Buyer Órdenes | ✅ (si splitter corre) |
-| Dashboard admin | ✅ Métricas + ingresos + pagos recientes |
-| Pagos del operador (admin) | ✅ Historial con filtros + resumen |
-| UX admin (feedback, validación inline, componentes unificados) | ✅ Completo |
-| Flujo de pago (checkout) | ✅ Funciona en físico, falla en emulador |
+
+| Área                                                           | Estado                                  |
+| -------------------------------------------------------------- | --------------------------------------- |
+| Roles (buyer vs gallery_admin)                                 | ✅ Completo                              |
+| Auth (JWT, middleware, refresh)                                | ✅ Completo                              |
+| Artisan CRUD                                                   | ✅ Completo                              |
+| Product CRUD                                                   | ✅ Completo                              |
+| Upload de imágenes (MinIO)                                     | ✅ Completo                              |
+| Perfil editable (name, wallet)                                 | ✅ Completo                              |
+| Validaciones de formularios                                    | ✅ Completo                              |
+| Comisión por producto                                          | ✅ Completo                              |
+| Buyer Explore + detalle                                        | ✅ Completo                              |
+| Buyer Órdenes                                                  | ✅ (si splitter corre)                   |
+| Dashboard admin                                                | ✅ Métricas + ingresos + pagos recientes |
+| Pagos del operador (admin)                                     | ✅ Historial con filtros + resumen       |
+| UX admin (feedback, validación inline, componentes unificados) | ✅ Completo                              |
+| Flujo de pago (checkout)                                       | ✅ Funciona en físico, falla en emulador |
+
 
 ---
 
@@ -28,6 +30,7 @@
 ### Backend (Gallery API `:4000` + Splitter `:4001` + MinIO `:9000`)
 
 **Auth y Roles**
+
 - `POST /api/auth/register` — registra buyer (role=buyer) o admin con `invite_code` + `gallery_name` (crea User + Gallery)
 - `POST /api/auth/login` — JWT con claims `sub`, `role`, `gallery_id`
 - `GET /api/auth/me` — perfil del usuario + gallery_id
@@ -36,6 +39,7 @@
 - Una galería por usuario (ADR-0005)
 
 **Artisans** `GET|POST /galleries/:gid/artisans`, `GET|PATCH|DELETE /galleries/:gid/artisans/:id`
+
 - Campos: name, wallet_address_url, image_url, bio, location, specialty, craft_type, tags
 - `POST /galleries/:gid/artisans/:id/toggle-active` con `?cascade=true`
 - `POST /galleries/:gid/link-artisan/:artisan_id` — asociar existente
@@ -44,6 +48,7 @@
 - `GET /api/artisans/:id` público, filtra `is_active=true`
 
 **Products** `GET|POST /galleries/:gid/artisans/:id/products`, `GET|PATCH|DELETE /galleries/:gid/products/:id`
+
 - Campos: name, base_price, asset_code (default USD), asset_scale (default 2), image_url, commission_rate
 - Detalle: description, materials, dimensions, tags (tabla `product_details`)
 - `POST /galleries/:gid/products/:id/toggle-active`
@@ -52,42 +57,55 @@
 - Límite 5 imágenes por producto
 
 **Upload** `POST /api/upload` (multipart, JWT required)
+
 - Procesa con `imaging` (Go): thumb 200x200 fill JPEG 72%, medium 800px fit JPEG 85%
 - Almacena en MinIO, devuelve `{thumbnail_url, medium_url}`
 - Image proxy: `GET /products/*filepath` sirve desde MinIO
 - Formatos: jpg, jpeg, png, webp, heic
 
 **Dashboard** `GET /galleries/:gid`
+
 - Gallery info + conteos: active/total artisans, active/total products
 
 **Pagos por galería** `GET /galleries/:gid/payments` (RequireGalleryOwner)
+
 - Devuelve `{summary, payments}`: lista ordenada desc con producto/artesano/galería precargados
 - Summary agregado: `total_sold`, `gallery_earned`, `completed_count`, `pending_count` (montos en unidades menores)
 
-**Explore** `GET /api/explore/products`, `GET /api/explore/products/:id`
+**Explore** `GET /api/explore/products?cursor=0&limit=20`, `GET /api/explore/products/:id`
+
+- Cursor-based pagination (`next_cursor` = 0 → no more items)
 - Filtra `is_active=true` (producto y artesano)
 - ProductDetailResponse: split, images, tags, artisan info
+
+**Paginación**
+- Admin: offset-based `?page=1&limit=20` (artisans, products) → `{items, total, page, limit}`
+- Buyer Explore: cursor-based `?cursor=0&limit=20` → `{items, next_cursor}`
 
 ### Flutter App
 
 **Navegación**
+
 - Dual-shell: buyer (Explorar, Historial) vs admin (Dashboard, Artesanos, Productos, Ajustes)
 - `sessionNotifier` + `refreshListenable` — GoRouter no se recrea
 - Login/register → redirect automático según rol
 - Logout limpia token, va a login
 
 **Admin — Dashboard**
+
 - Métricas tappables (navegan a su tab): artesanos activos/total, productos activos/total
 - Card "Ingresos": total vendido + comisión de galería + badge de pendientes, tap → historial
 - "Pagos recientes" (últimos 3) con "Ver todos"
 - Nombre de galería, pull-to-refresh
 
 **Admin — Pagos** (`/admin/payments`)
+
 - Resumen: total vendido, comisión ganada, pendientes
 - Filtros por chip: Todos / Completados / Pendientes / Fallidos
 - Reutiliza `PaymentCard` (localizada a español) con split por pago
 
 **Admin — Artesanos**
+
 - Card: nombre primero, especialidad · ubicación, wallet (aviso en rojo si falta), foto thumb
 - Tap en card → productos del artesano; switch + menú overflow (Editar/Eliminar)
 - Crear/editar: form con validación inline (nombre min 2, wallet `https://`) + cámara/galería
@@ -95,6 +113,7 @@
 - Eliminar con confirmación + snackbar (409 → mensaje "todavía tiene productos")
 
 **Admin — Productos**
+
 - Card compartida `AdminProductCard` (lista global y por artesano): tap → detalle, switch con Semantics
 - Crear desde el tab: FAB → picker de artesano (bottom sheet); si no hay artesanos, redirige a crearlos
 - Form con validación inline, input formatters (precio/comisión) y preview del split en vivo
@@ -102,28 +121,34 @@
 - Refresh post-edit; toggle en vista de artesano invalida la lista global
 
 **Admin — Ajustes**
+
 - Card de perfil (nombre, email) con tap → cuenta editable
 - Botón logout
 
 **UX transversal del admin**
+
 - Mutaciones devuelven error amigable (`Future<String?>`); una mutación fallida ya no tumba la lista
 - Snackbars de éxito/error en toda mutación; sin errores crudos al usuario
 - FABs y acciones primarias en terracota (`cs.primary`); destructivo solo en `cs.error`
 - Targets táctiles ≥48px; fix de contraste en labels "Galería %" (antes ilegibles con `secondary`)
 
 **Buyer — Explore**
+
 - Grid de productos con foto, nombre, precio, artesano, split
 - Búsqueda por texto
 - Imágenes con baseUrl prepended (soporta URLs relativas)
 
 **Buyer — Detalle de producto**
+
 - Galería de imágenes (page view), specs, descripción, tags, split, artesano
 
 **Buyer — Cuenta** (`/account`, push)
+
 - Perfil editable: nombre, wallet (modo edición/visualización)
 - Logout
 
 **Validaciones**
+
 - Artisan: nombre requerido (min 2 chars), wallet debe empezar con `https://` — inline al escribir
 - Product: nombre requerido, precio > 0, comisión 0-100 — inline + input formatters
 - Imágenes: máximo 5 por producto
@@ -133,24 +158,27 @@
 ## Lo que falta
 
 ### Prioridad alta
+
 - [ ] **Filtros en Explore** — por ubicación, especialidad, rango de precio
-- [ ] **Paginación** en listas (artesanos, productos, explore)
+- [x] **Paginación** ✅ — backend listo (offset admin, cursor explore). Falta UI en Flutter.
 - [ ] **Eliminar foto de artesano** (actualmente solo cambiar)
 - [ ] **Ordenar productos** (drag & drop para reordenar)
 - [ ] **Buscar artesanos** en el admin
 - [ ] **Vista de producto en Explore** — cuando un producto se crea con foto, thumbnail no siempre se ve (URL relativa en algunos contextos)
 
 ### Prioridad media
+
 - [ ] **Gráficos en dashboard** — tendencia de ventas por periodo (pagos e ingresos ya están ✅)
 - [ ] **Estadísticas** por artesano, por producto
 - [ ] **Notificaciones** (WebSocket) para cambios de estado, pagos
-- [ ] **Exportar datos** (CSV)
-- [ ] **Dark mode**
+- [ ] 
+- [ ] 
 - [ ] **Soporte multi-idioma** (es/en)
-- [ ] **Eliminación masiva** de productos/artesanos
-- [ ] **Mejorar feedback de carga** en uploads (progress bar)
+- [ ] 
+- [ ] ***Mejorar feedback de carga** en uploads (progress bar)*
 
 ### Prioridad baja / ideas
+
 - [ ] Onboarding para nuevos admins
 - [x] Vista previa del split al crear producto ✅
 - [ ] Categorías de productos
@@ -160,6 +188,7 @@
 - [ ] CI/CD
 
 ### Deuda técnica
+
 - [ ] Splitter callback usa `SPLITTER_PUBLIC_URL` — funciona en físico, falla en emulador
 - [ ] `api_client.dart` getter/setter innecesario para token
 - [ ] No se valida que artesano pertenezca a la galería al crear producto
@@ -226,3 +255,4 @@ f53e404 feat: image upload endpoint (resize + MinIO)
 7959def feat(app): dual-shell router (buyer vs admin)
 a9a0327 docs: roles PRD, ADR-0005, CONTEXT.md, skills
 ```
+
