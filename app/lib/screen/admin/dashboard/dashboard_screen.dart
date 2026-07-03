@@ -31,6 +31,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   Widget build(BuildContext context) {
     final dashboardAsync = ref.watch(dashboardProvider);
     final paymentsAsync = ref.watch(galleryPaymentsProvider);
+    final statsAsync = ref.watch(statsProvider);
     final cs = Theme.of(context).colorScheme;
 
     return dashboardAsync.when(
@@ -88,6 +89,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              statsAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (stats) => _StatsRow(stats: stats, cs: cs),
               ),
               const SizedBox(height: 12),
               if (paymentsAsync.valueOrNull != null) ...[
@@ -274,5 +281,46 @@ class _MetricCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _StatsRow extends StatelessWidget {
+  final Map<String, dynamic> stats;
+  final ColorScheme cs;
+  const _StatsRow({required this.stats, required this.cs});
+
+  @override
+  Widget build(BuildContext context) {
+    final earnings = (stats['gallery_earnings'] as num?)?.toInt() ?? 0;
+    final completed = (stats['completed_payments'] as num?)?.toInt() ?? 0;
+    final pending = (stats['pending_payments'] as num?)?.toInt() ?? 0;
+
+    if (earnings == 0 && completed == 0 && pending == 0) return const SizedBox.shrink();
+
+    return Row(
+      children: [
+        Expanded(child: _MiniCard(icon: Icons.monetization_on_outlined, label: 'Ganancias', value: '\$${(earnings / 100).toStringAsFixed(0)}', color: Colors.green, cs: cs)),
+        const SizedBox(width: 8),
+        Expanded(child: _MiniCard(icon: Icons.check_circle_outline, label: 'Completados', value: '$completed', color: cs.primary, cs: cs)),
+        const SizedBox(width: 8),
+        Expanded(child: _MiniCard(icon: Icons.pending_outlined, label: 'Pendientes', value: '$pending', color: Colors.orange, cs: cs)),
+      ],
+    );
+  }
+}
+
+class _MiniCard extends StatelessWidget {
+  final IconData icon; final String label; final String value; final Color color; final ColorScheme cs;
+  const _MiniCard({required this.icon, required this.label, required this.value, required this.color, required this.cs});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(10)), child: Row(children: [
+      Icon(icon, size: 18, color: color), const SizedBox(width: 8),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(value, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+        Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
+      ])),
+    ]));
   }
 }

@@ -320,4 +320,19 @@ class GalleryService {
     );
     return AdminProduct.fromJson(json as Map<String, dynamic>);
   }
+
+  Future<Map<String, dynamic>> getDashboardStats(int galleryId) async {
+    final json = await _api.get('/api/galleries/$galleryId/stats');
+    return json as Map<String, dynamic>;
+  }
+
+  Future<List<Map<String, dynamic>>> getArtisanStats(int galleryId) async {
+    final json = await _api.get('/api/galleries/$galleryId/stats/artisans');
+    return (json as List<dynamic>).cast<Map<String, dynamic>>();
+  }
+
+  Future<List<Map<String, dynamic>>> getProductStats(int galleryId) async {
+    final json = await _api.get('/api/galleries/$galleryId/stats/products');
+    return (json as List<dynamic>).cast<Map<String, dynamic>>();
+  }
 }

@@ -55,6 +55,7 @@ func main() {
 	artisanSvc := service.NewArtisanService(db)
 	productSvc := service.NewProductService(db)
 	favoriteSvc := service.NewFavoriteService(db)
+	statsSvc := service.NewStatsService(db)
 	checkoutSvc := service.NewCheckoutService(db, cfg.SplitterURL, cfg.SplitterAPIKey)
 	paymentSvc := service.NewPaymentService(db)
 
@@ -73,6 +74,7 @@ func main() {
 	uploadHandler := handler.NewUploadHandler(uploadSvc)
 	imageProxy := handler.NewImageProxyHandler(uploadSvc.MinioClient(), uploadSvc.MinioBucket())
 	productImageHandler := handler.NewProductImageHandler(db)
+	statsHandler := handler.NewStatsHandler(statsSvc)
 
 	router := gin.New()
 	router.Use(logging.GinMiddleware(logger))
@@ -148,6 +150,11 @@ func main() {
 		admin.GET("/products/:id/images", productImageHandler.List)
 		admin.POST("/products/:id/images", productImageHandler.Add)
 		admin.DELETE("/products/:id/images/:image_id", productImageHandler.Delete)
+
+		// Stats
+		admin.GET("/stats", statsHandler.Dashboard)
+		admin.GET("/stats/artisans", statsHandler.Artisans)
+		admin.GET("/stats/products", statsHandler.Products)
 	}
 
 	logger.Info("starting server", "port", 4000)
