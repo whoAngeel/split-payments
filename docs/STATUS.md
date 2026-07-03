@@ -159,12 +159,11 @@
 
 ### Prioridad alta
 
-- [ ] **Filtros en Explore** — por ubicación, especialidad, rango de precio
+- [x] **Filtros en Explore** ✅ — ubicación, especialidad, rango de precio (backend + chips dinámicos)
 - [x] **Paginación** ✅ — backend listo (offset admin, cursor explore). Falta UI en Flutter.
 - [ ] **Eliminar foto de artesano** (actualmente solo cambiar)
 - [ ] **Ordenar productos** (drag & drop para reordenar)
 - [ ] **Buscar artesanos** en el admin
-- [ ] **Vista de producto en Explore** — cuando un producto se crea con foto, thumbnail no siempre se ve (URL relativa en algunos contextos)
 
 ### Prioridad media
 
