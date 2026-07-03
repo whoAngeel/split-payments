@@ -33,6 +33,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     final paymentsAsync = ref.watch(galleryPaymentsProvider);
     final statsAsync = ref.watch(statsProvider);
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     return dashboardAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -45,89 +46,90 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           return const AppErrorState(message: 'No hay galería disponible');
         }
 
+        final statsData = statsAsync.valueOrNull ?? {};
+
         return RefreshIndicator(
           onRefresh: () async {
             await Future.wait([
               ref.read(dashboardProvider.notifier).refresh(),
               ref.read(galleryPaymentsProvider.notifier).refresh(),
+              ref.read(statsProvider.notifier).refresh(),
             ]);
           },
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
             children: [
               Text(
                 dashboard.gallery.name,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: tt.headlineSmall?.copyWith(
                   color: cs.onSurface,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
+
+              // Top metrics: artisans + products
               Row(
                 children: [
                   Expanded(
-                    child: _MetricCard(
-                      icon: Icons.people,
+                    child: _TappableMetric(
+                      icon: Icons.people_alt_outlined,
                       label: 'Artesanos',
-                      value:
-                          '${dashboard.activeArtisans} / ${dashboard.totalArtisans}',
-                      subtitle: 'activos / total',
-                      color: cs.primary,
+                      value: '${dashboard.activeArtisans}',
+                      total: dashboard.totalArtisans,
                       onTap: () => context.go('/admin/artisans'),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Expanded(
-                    child: _MetricCard(
-                      icon: Icons.inventory_2,
+                    child: _TappableMetric(
+                      icon: Icons.inventory_2_outlined,
                       label: 'Productos',
-                      value:
-                          '${dashboard.activeProducts} / ${dashboard.totalProducts}',
-                      subtitle: 'activos / total',
-                      color: cs.primary,
+                      value: '${dashboard.activeProducts}',
+                      total: dashboard.totalProducts,
                       onTap: () => context.go('/admin/products'),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              statsAsync.when(
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (stats) => _StatsRow(stats: stats, cs: cs),
-              ),
-              const SizedBox(height: 12),
-              if (paymentsAsync.valueOrNull != null) ...[
+              const SizedBox(height: 24),
+
+              // Revenue card
+              if (paymentsAsync.valueOrNull != null)
                 _RevenueCard(
                   summary: paymentsAsync.value!.summary,
                   onTap: () => context.push('/admin/payments'),
                 ),
-                if (paymentsAsync.value!.payments.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Text(
-                        'Pagos recientes',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
+
+              // Stats row — wider, single line per stat, no overflow
+              if (statsData.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                _StatsSection(stats: statsData),
+              ],
+
+              // Recent payments
+              if (paymentsAsync.valueOrNull != null &&
+                  paymentsAsync.value!.payments.isNotEmpty) ...[
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Text('Pagos recientes',
+                        style: tt.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600)),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => context.push('/admin/payments'),
+                      child: const Text('Ver todos'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...paymentsAsync.value!.payments.take(3).map(
+                      (p) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: PaymentCard(payment: p),
                       ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () => context.push('/admin/payments'),
-                        child: const Text('Ver todos'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  ...paymentsAsync.value!.payments
-                      .take(3)
-                      .map(
-                        (p) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: PaymentCard(payment: p),
-                        ),
-                      ),
-                ],
+                    ),
               ],
             ],
           ),
@@ -137,8 +139,70 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   }
 }
 
-/// Card de ingresos: total vendido como número principal, la comisión de la
-/// galería como secundario. Tap → historial completo de pagos.
+// ─── Tappable Metric ──────────────────────────────────────────────────────────
+
+class _TappableMetric extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final int total;
+  final VoidCallback onTap;
+
+  const _TappableMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.total,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Material(
+      color: cs.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Icon(icon, size: 18, color: cs.primary),
+                const SizedBox(width: 6),
+                Text(label,
+                    style: tt.labelMedium
+                        ?.copyWith(color: cs.onSurfaceVariant)),
+              ]),
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(value,
+                      style: tt.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w700, color: cs.primary)),
+                  const SizedBox(width: 4),
+                  Text('/ $total',
+                      style: tt.bodyMedium
+                          ?.copyWith(color: cs.onSurfaceVariant)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Revenue Card ─────────────────────────────────────────────────────────────
+
 class _RevenueCard extends StatelessWidget {
   final GalleryPaymentsSummary summary;
   final VoidCallback onTap;
@@ -158,53 +222,42 @@ class _RevenueCard extends StatelessWidget {
     return Material(
       color: cs.surfaceContainerLow,
       borderRadius: BorderRadius.circular(14),
-      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.payments_outlined, size: 20, color: cs.primary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Ingresos',
-                    style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant),
-                  ),
-                  const Spacer(),
-                  if (summary.pendingCount > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
+              Row(children: [
+                Icon(Icons.payments_outlined, size: 20, color: cs.primary),
+                const SizedBox(width: 8),
+                Text('Ingresos',
+                    style: tt.labelLarge
+                        ?.copyWith(color: cs.onSurfaceVariant)),
+                const Spacer(),
+                if (summary.pendingCount > 0)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
                         color: cs.primaryContainer,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${summary.pendingCount} pendiente${summary.pendingCount == 1 ? '' : 's'}',
-                        style: tt.labelSmall?.copyWith(
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Text(
+                      '${summary.pendingCount} pendiente${summary.pendingCount == 1 ? '' : 's'}',
+                      style: tt.labelSmall?.copyWith(
                           color: cs.onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    )
-                  else
-                    Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-                ],
-              ),
+                          fontWeight: FontWeight.w600),
+                    ),
+                  )
+                else
+                  Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+              ]),
               const SizedBox(height: 12),
-              Text(
-                _fmt(summary.totalSold),
-                style: tt.headlineMedium?.copyWith(
-                  color: cs.onSurface,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text(_fmt(summary.totalSold),
+                  style: tt.headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 2),
               Text(
                 'Tu comisión: ${_fmt(summary.galleryEarned)} · ${summary.completedCount} venta${summary.completedCount == 1 ? '' : 's'}',
@@ -218,109 +271,59 @@ class _RevenueCard extends StatelessWidget {
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final String subtitle;
-  final Color color;
-  final VoidCallback? onTap;
+// ─── Stats Section ────────────────────────────────────────────────────────────
 
-  const _MetricCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.subtitle,
-    required this.color,
-    this.onTap,
-  });
+class _StatsSection extends StatelessWidget {
+  final Map<String, dynamic> stats;
+  const _StatsSection({required this.stats});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Material(
-      color: cs.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(14),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, size: 20, color: color),
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: cs.onSurface,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
-class _StatsRow extends StatelessWidget {
-  final Map<String, dynamic> stats;
-  final ColorScheme cs;
-  const _StatsRow({required this.stats, required this.cs});
-
-  @override
-  Widget build(BuildContext context) {
     final earnings = (stats['gallery_earnings'] as num?)?.toInt() ?? 0;
     final completed = (stats['completed_payments'] as num?)?.toInt() ?? 0;
     final pending = (stats['pending_payments'] as num?)?.toInt() ?? 0;
 
-    if (earnings == 0 && completed == 0 && pending == 0) return const SizedBox.shrink();
-
-    return Row(
-      children: [
-        Expanded(child: _MiniCard(icon: Icons.monetization_on_outlined, label: 'Ganancias', value: '\$${(earnings / 100).toStringAsFixed(0)}', color: Colors.green, cs: cs)),
-        const SizedBox(width: 8),
-        Expanded(child: _MiniCard(icon: Icons.check_circle_outline, label: 'Completados', value: '$completed', color: cs.primary, cs: cs)),
-        const SizedBox(width: 8),
-        Expanded(child: _MiniCard(icon: Icons.pending_outlined, label: 'Pendientes', value: '$pending', color: Colors.orange, cs: cs)),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        children: [
+          _Stat(label: 'Ganancias', value: '\$${(earnings / 100).toStringAsFixed(0)}'),
+          _dot(cs),
+          _Stat(label: 'Completados', value: '$completed'),
+          _dot(cs),
+          _Stat(label: 'Pendientes', value: '$pending'),
+        ],
+      ),
     );
   }
+
+  Widget _dot(ColorScheme cs) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Text('·', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 18)),
+      );
 }
 
-class _MiniCard extends StatelessWidget {
-  final IconData icon; final String label; final String value; final Color color; final ColorScheme cs;
-  const _MiniCard({required this.icon, required this.label, required this.value, required this.color, required this.cs});
+class _Stat extends StatelessWidget {
+  final String label;
+  final String value;
+  const _Stat({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    return Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(10)), child: Row(children: [
-      Icon(icon, size: 18, color: color), const SizedBox(width: 8),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(value, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-        Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
-      ])),
-    ]));
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(value,
+            style:
+                tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 2),
+        Text(label,
+            style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
+      ],
+    );
   }
 }
