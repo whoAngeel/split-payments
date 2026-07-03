@@ -4,31 +4,23 @@
 
 - Go 1.22+
 - Flutter 3.44+
-- PostgreSQL (corriendo en puerto 5432 o 5433 según .env)
-- MinIO (almacenamiento de imágenes)
-- Docker (para MinIO, opcional)
+- PostgreSQL
+- MinIO
+- Docker (opcional, para despliegue)
 
 ---
 
-## 1. PostgreSQL
+## Desarrollo local
 
-Ya está corriendo en `localhost:5432`. La app espera `5433`. Cambiá el `.env`:
-
-```bash
-# backend/.env
-DATABASE_URL=postgres://openpayments:openpayments@localhost:5432/openpayments?sslmode=disable
-```
-
-O si querés mantener el puerto 5433, creá la DB y el user:
+### 1. PostgreSQL
 
 ```bash
+# En el puerto que use tu .env (5432 o 5433)
 sudo -u postgres psql -c "CREATE USER openpayments WITH PASSWORD 'openpayments';"
 sudo -u postgres psql -c "CREATE DATABASE openpayments OWNER openpayments;"
 ```
 
----
-
-## 2. MinIO
+### 2. MinIO
 
 ```bash
 docker run -d --name minio \
@@ -38,57 +30,39 @@ docker run -d --name minio \
   minio/minio server /data --console-address ":9001"
 ```
 
-Verificar: `curl http://localhost:9000` debe responder.
+### 3. Variables de entorno
 
----
+Copiá y editá `backend/.env` desde `.env.example`.
 
-## 3. Backend
-
-### Variables de entorno
-
-El archivo `backend/.env` ya está configurado. Ajustá `DATABASE_URL` al puerto correcto (5432 si usás el PostgreSQL del sistema).
-
-### Gallery API (puerto 4000)
+### 4. Gallery API (puerto 4000)
 
 ```bash
 cd backend
 go run ./cmd/gallery
 ```
 
-### Splitter (puerto 4001)
-
-En otra terminal:
+### 5. Splitter (puerto 4001)
 
 ```bash
 cd backend
 go run ./cmd/splitter
 ```
 
-### Seed (datos de prueba)
+### 6. Seed (datos de prueba)
 
 ```bash
 cd backend
 go run ./cmd/seed
 ```
 
-### Tests
+### 7. Tests
 
 ```bash
 cd backend
 go test ./internal/...
 ```
 
----
-
-## 4. Flutter App
-
-Ajustá la IP en `app/lib/config/app_config.dart` si tu máquina tiene otra IP:
-
-```dart
-const appConfig = AppConfig(baseUrl: 'http://192.168.1.13:4000');
-```
-
-Correr en dispositivo/emulador:
+### 8. Flutter App
 
 ```bash
 cd app
@@ -96,19 +70,36 @@ flutter pub get
 flutter run
 ```
 
-O compilar APK:
-
-```bash
-cd app
-flutter build apk --debug
-```
-
 ---
 
-## 5. Crear un admin
+## Despliegue con Docker (homelab)
+
+### 1. Configurar variables de entorno
+
+Creá un archivo `.env` en la raíz del proyecto con las variables sensibles:
 
 ```bash
-curl -X POST http://localhost:4000/api/auth/register \
+cp .env.example .env
+# Editá WALLET_ADDRESS_URL, PRIVATE_KEY_PATH, KEY_ID, JWT_SECRET, INVITE_CODE
+```
+
+### 2. Subir los servicios
+
+```bash
+docker compose up -d
+```
+
+Esto levanta:
+- PostgreSQL (puerto 5432)
+- MinIO (puertos 9000, 9001)
+- Gallery API (puerto 4000)
+- Splitter (puerto 4001)
+- Adminer (puerto 8070, opcional)
+
+### 3. Crear un admin
+
+```bash
+curl -X POST http://<IP>:4000/api/auth/register \
   -H 'Content-Type: application/json' \
   -d '{
     "email": "admin@test.com",
@@ -116,8 +107,15 @@ curl -X POST http://localhost:4000/api/auth/register \
     "name": "Admin",
     "role": "gallery_admin",
     "gallery_name": "Mi Galeria",
-    "invite_code": "test123"
+    "invite_code": "tu-codigo"
   }'
+```
+
+### 4. Seed (opcional)
+
+```bash
+docker compose exec gallery /gallery
+# O ejecutar el seed localmente apuntando a la DB del contenedor
 ```
 
 ---
@@ -130,4 +128,5 @@ curl -X POST http://localhost:4000/api/auth/register \
 | Splitter | 4001 |
 | MinIO | 9000 |
 | MinIO Console | 9001 |
-| PostgreSQL | 5432 o 5433 |
+| PostgreSQL | 5432 |
+| Adminer | 8070 |
