@@ -220,3 +220,6 @@ backend/seed
 .claude/skills/impeccable/scripts/live/ui-core.mjs
 .claude/skills/impeccable/scripts/live/vocabulary.mjs
 backend/cmd/backfill-images/main.go
+DEPLOY.md
+DEPLOY.md
+.env.production
