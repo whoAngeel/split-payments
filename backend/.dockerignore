@@ -1,0 +1,8 @@
+tmp/
+gallery
+splitter
+private.key
+*.key
+.env*
+Dockerfile*
+.dockerignore
