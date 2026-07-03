@@ -55,6 +55,8 @@ class _PaymentConfirmationScreenState
           _ws.disconnect();
         }
       });
+    } else {
+      _completePayment(status: _status);
     }
   }
 

@@ -167,7 +167,9 @@ class _ExploreContentState extends ConsumerState<_ExploreContent> {
   void initState() {
     super.initState();
     _searchController.addListener(() {
-      setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
+      setState(
+        () => _searchQuery = _searchController.text.trim().toLowerCase(),
+      );
     });
     _loadFilters();
   }
@@ -176,10 +178,13 @@ class _ExploreContentState extends ConsumerState<_ExploreContent> {
     try {
       final service = ref.read(galleryServiceProvider);
       final opts = await service.getFilterOptions();
-      if (mounted) setState(() {
-        _locations = (opts['locations'] as List<dynamic>?)?.cast<String>() ?? [];
-        _specialties = (opts['specialties'] as List<dynamic>?)?.cast<String>() ?? [];
-      });
+      if (mounted)
+        setState(() {
+          _locations =
+              (opts['locations'] as List<dynamic>?)?.cast<String>() ?? [];
+          _specialties =
+              (opts['specialties'] as List<dynamic>?)?.cast<String>() ?? [];
+        });
     } catch (_) {}
   }
 
@@ -215,9 +220,9 @@ class _ExploreContentState extends ConsumerState<_ExploreContent> {
                   padding: const EdgeInsets.all(32),
                   child: Text(
                     'No results for "$_searchQuery"',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -234,9 +239,9 @@ class _ExploreContentState extends ConsumerState<_ExploreContent> {
                     child: ProductCard(
                       product: product,
                       baseUrl: ref.read(apiClientProvider).baseUrl,
-                  onBuy: () {
-                    context.push('/product/${product.id}');
-                  },
+                      onBuy: () {
+                        context.push('/product/${product.id}');
+                      },
                     ),
                   );
                 }, childCount: filtered.length),
@@ -283,20 +288,26 @@ class _ExploreContentState extends ConsumerState<_ExploreContent> {
               children: [
                 AppChip(
                   label: 'Todos',
-                  selected: _selectedSpecialty == null && _selectedLocation == null,
-                  onTap: () => setState(() { _selectedSpecialty = null; _selectedLocation = null; }),
+                  selected:
+                      _selectedSpecialty == null && _selectedLocation == null,
+                  onTap: () => setState(() {
+                    _selectedSpecialty = null;
+                    _selectedLocation = null;
+                  }),
                 ),
-                ..._specialties.map((s) => Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: AppChip(
-                    label: s,
-                    selected: _selectedSpecialty == s,
-                    onTap: () => setState(() {
-                      _selectedSpecialty = _selectedSpecialty == s ? null : s;
-                      _selectedLocation = null;
-                    }),
+                ..._specialties.map(
+                  (s) => Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: AppChip(
+                      label: s,
+                      selected: _selectedSpecialty == s,
+                      onTap: () => setState(() {
+                        _selectedSpecialty = _selectedSpecialty == s ? null : s;
+                        _selectedLocation = null;
+                      }),
+                    ),
                   ),
-                )),
+                ),
               ],
             ),
           ),
@@ -305,17 +316,23 @@ class _ExploreContentState extends ConsumerState<_ExploreContent> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: _locations.map((l) => Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: AppChip(
-                    label: l,
-                    selected: _selectedLocation == l,
-                    onTap: () => setState(() {
-                      _selectedLocation = _selectedLocation == l ? null : l;
-                      _selectedSpecialty = null;
-                    }),
-                  ),
-                )).toList(),
+                children: _locations
+                    .map(
+                      (l) => Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: AppChip(
+                          label: l,
+                          selected: _selectedLocation == l,
+                          onTap: () => setState(() {
+                            _selectedLocation = _selectedLocation == l
+                                ? null
+                                : l;
+                            _selectedSpecialty = null;
+                          }),
+                        ),
+                      ),
+                    )
+                    .toList(),
               ),
             ),
           ],
@@ -333,11 +350,11 @@ Widget _headerSliver(BuildContext context) {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {},
-            tooltip: 'Menu',
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.menu),
+          //   onPressed: () {},
+          //   tooltip: 'Menu',
+          // ),
           const Spacer(),
           Text(
             'OAXACA ARTISAN',

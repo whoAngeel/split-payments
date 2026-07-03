@@ -219,3 +219,4 @@ backend/seed
 .claude/skills/impeccable/scripts/live/sveltekit-adapter.mjs
 .claude/skills/impeccable/scripts/live/ui-core.mjs
 .claude/skills/impeccable/scripts/live/vocabulary.mjs
+backend/cmd/backfill-images/main.go

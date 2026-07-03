@@ -29,6 +29,9 @@ class ArtisansNotifier extends AsyncNotifier<List<Artisan>> {
 
   @override
   Future<List<Artisan>> build() async {
+    // watch: cambiar de cuenta reconstruye el provider; sin esto la lista
+    // de la galería anterior queda en memoria y se alcanza a ver.
+    ref.watch(authProvider);
     if (_galleryId == 0) return [];
     return ref.read(galleryServiceProvider).getArtisans(_galleryId);
   }
@@ -143,6 +146,7 @@ class AdminProductsNotifier extends AsyncNotifier<List<AdminProduct>> {
 
   @override
   Future<List<AdminProduct>> build() async {
+    ref.watch(authProvider);
     if (_galleryId == 0) return [];
     return ref.read(galleryServiceProvider).getAdminProducts(_galleryId);
   }

@@ -17,12 +17,32 @@ class AdminArtisansScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminArtisansScreenState extends ConsumerState<AdminArtisansScreen> {
+  final _searchController = TextEditingController();
+  String _query = '';
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(artisansProvider.notifier).refresh();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Artisan> _filter(List<Artisan> artisans) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return artisans;
+    return artisans.where((a) {
+      return a.name.toLowerCase().contains(q) ||
+          a.specialty.toLowerCase().contains(q) ||
+          a.location.toLowerCase().contains(q) ||
+          a.craftType.toLowerCase().contains(q);
+    }).toList();
   }
 
   @override
@@ -59,6 +79,7 @@ class _AdminArtisansScreenState extends ConsumerState<AdminArtisansScreen> {
           }
 
           final active = artisans.where((a) => a.isActive).length;
+          final filtered = _filter(artisans);
 
           return RefreshIndicator(
             onRefresh: () => ref.read(artisansProvider.notifier).refresh(),
@@ -98,15 +119,59 @@ class _AdminArtisansScreenState extends ConsumerState<AdminArtisansScreen> {
                     ),
                   ),
                 ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                  sliver: SliverList.separated(
-                    itemCount: artisans.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) =>
-                        _ArtisanCard(artisan: artisans[index]),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (v) => setState(() => _query = v),
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        hintText: 'Buscar por nombre, especialidad o lugar',
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        suffixIcon: _query.isEmpty
+                            ? null
+                            : IconButton(
+                                icon: const Icon(Icons.close, size: 18),
+                                tooltip: 'Limpiar búsqueda',
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _query = '');
+                                },
+                              ),
+                        filled: true,
+                        fillColor: cs.surfaceContainerLow,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
                   ),
                 ),
+                if (filtered.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Text(
+                        'Sin resultados para "${_query.trim()}"',
+                        style: tt.bodyMedium
+                            ?.copyWith(color: cs.onSurfaceVariant),
+                      ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                    sliver: SliverList.separated(
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) =>
+                          _ArtisanCard(artisan: filtered[index]),
+                    ),
+                  ),
               ],
             ),
           );

@@ -189,13 +189,13 @@ func (h *SplitHandler) SplitCallback(c *gin.Context) {
 
 	_, err := h.svc.HandleSplitCallback(ctx, sessionID, interactRef, hash)
 
-	hub.Broadcast(sessionID, []byte(`{"status":"completed"}`))
-
 	if err != nil {
+		hub.Broadcast(sessionID, []byte(`{"status":"failed"}`))
 		c.Redirect(http.StatusFound,
 			fmt.Sprintf("openpayments://payment/complete?session_id=%s&status=failed&error=%s", sessionID, err.Error()))
 		return
 	}
+	hub.Broadcast(sessionID, []byte(`{"status":"completed"}`))
 	c.Redirect(http.StatusFound,
 		fmt.Sprintf("openpayments://payment/complete?session_id=%s&status=completed", sessionID))
 }

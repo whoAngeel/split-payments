@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -54,6 +55,13 @@ func (s *PaymentService) Save(input SavePaymentInput) (*model.Payment, error) {
 		Status:       "pending",
 	}
 	if err := s.db.Create(&payment).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			var existing model.Payment
+			if err := s.db.Where("session_id = ?", input.SessionID).First(&existing).Error; err != nil {
+				return nil, fmt.Errorf("finding existing payment: %w", err)
+			}
+			return &existing, nil
+		}
 		return nil, fmt.Errorf("saving payment: %w", err)
 	}
 	return &payment, nil
