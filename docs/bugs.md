@@ -1,14 +1,14 @@
 # Bugs
 
-## Checkout: "gallery no tiene comisión seteada"
+## ~~Checkout: "gallery no tiene comisión seteada"~~ :heavy_check_mark: arreglado
 
-- **Archivo probable:** `backend/internal/gallery/service/checkout.go` (validación de comisión)
-- **Descripción:** Al intentar pagar, el backend rechaza la operación diciendo que la galería no tiene comisión configurada, a pesar de que el producto sí la tiene asociada.
-- **Posible causa:** La validación busca la comisión a nivel de galería (`gallery_id`) y no a nivel de producto. Si la galería no tiene un registro en la tabla `commissions`, aunque el producto tenga `commission_rate`, falla.
+- **Archivo:** `backend/internal/gallery/service/checkout.go`
+- **Causa:** El checkout usaba `gallery.Commission.Rate` (tabla `commissions`, seteada por API separada) en vez de `product.CommissionRate` (seteado al crear el producto).
+- **Fix:** Ahora usa `product.CommissionRate` como fuente primaria, con fallback a `gallery.Commission.Rate` si es 0.
 
 ## Checkout: no se ve la imagen del producto
 
-- **Archivo probable:** `app/lib/screen/checkout/checkout_screen.dart` (widget de imagen)
+- **Archivo probable:** `app/lib/screen/checkout/checkout_screen.dart` o `app/lib/screen/explore/product_detail_screen.dart`
 - **Descripción:** En la pantalla de checkout, la imagen del producto no se renderiza.
 - **Posible causa:** La URL de la imagen usa `http` en vez de `https`, o la ruta no se construye correctamente con el `baseUrl` actual (Cloudflare tunnel).
 

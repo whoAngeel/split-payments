@@ -40,11 +40,14 @@ func (s *CheckoutService) Checkout(buyerWallet string, productID uint) (*shared.
 	}
 
 	gallery := product.Artisan.Galleries[0]
-	if gallery.Commission == nil {
-		return nil, fmt.Errorf("gallery has no commission set")
-	}
 
-	commissionRate := gallery.Commission.Rate
+	commissionRate := product.CommissionRate
+	if commissionRate == 0 && gallery.Commission != nil {
+		commissionRate = gallery.Commission.Rate
+	}
+	if commissionRate == 0 {
+		return nil, fmt.Errorf("no commission set for this product")
+	}
 	galleryShare := product.BasePrice * int64(commissionRate) / 10000
 	artisanShare := product.BasePrice - galleryShare
 
