@@ -62,10 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (msg.contains('timeout') || msg.contains('timed out')) {
       return 'Server took too long. Try again';
     }
-    if (msg.contains('socket') || msg.contains('connection') || msg.contains('network')) {
-      return 'No connection. Check your internet';
-    }
-    return 'Error: ${error.toString()}';
+    return 'DEBUG: ${error.toString()}';
   }
 
   @override
@@ -169,12 +166,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     variant: AppButtonVariant.text,
                     onPressed: () => ref.read(authProvider.notifier).cancelLogin(),
                   )
-                else
+                else ...[
                   AppButton(
                     label: 'Create account',
                     variant: AppButtonVariant.text,
                     onPressed: () => context.go('/register'),
                   ),
+                  AppButton(
+                    label: 'Forgot password?',
+                    variant: AppButtonVariant.text,
+                    onPressed: () => context.go('/forgot-password'),
+                  ),
+                ],
               ],
             ),
           ),

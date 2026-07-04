@@ -67,7 +67,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _ProductHero(product: product, price: price, cs: cs),
+                    _ProductHero(product: product, price: price, cs: cs, baseUrl: ref.read(apiClientProvider).baseUrl),
                     const SizedBox(height: 24),
                     Divider(height: 1, color: cs.outlineVariant),
                     const SizedBox(height: 24),
@@ -149,11 +149,13 @@ class _ProductHero extends StatelessWidget {
   final Product product;
   final num price;
   final ColorScheme cs;
+  final String baseUrl;
 
   const _ProductHero({
     required this.product,
     required this.price,
     required this.cs,
+    required this.baseUrl,
   });
 
   @override
@@ -171,8 +173,15 @@ class _ProductHero extends StatelessWidget {
             color: cs.surfaceContainerHighest,
             child: product.imageUrl.isNotEmpty
                 ? AppImage(
-                    imageVariant(product.imageUrl, 'thumb'),
-                    fallbackUrl: product.imageUrl,
+                    imageVariant(
+                      product.imageUrl.startsWith('http')
+                          ? product.imageUrl
+                          : '$baseUrl${product.imageUrl}',
+                      'thumb',
+                    ),
+                    fallbackUrl: product.imageUrl.startsWith('http')
+                        ? product.imageUrl
+                        : '$baseUrl${product.imageUrl}',
                     cacheWidth: 200,
                     errorIconSize: 24,
                   )

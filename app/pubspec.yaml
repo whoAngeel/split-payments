@@ -46,6 +46,7 @@ dependencies:
   app_links: ^7.1.2
   google_fonts: ^8.1.0
   image_picker: ^1.2.2
+  image: ^4.9.1
 
 dev_dependencies:
   sentry_dart_plugin: ^3.4.0

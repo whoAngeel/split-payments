@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:openpayments_app/models/admin_product.dart';
+import 'package:openpayments_app/utils/image_utils.dart';
 import 'package:openpayments_app/providers/auth_provider.dart';
 import 'package:openpayments_app/providers/api_client_provider.dart';
 import 'package:openpayments_app/providers/admin_crud_provider.dart';
@@ -107,8 +108,9 @@ class _AdminProductDetailScreenState
 
     try {
       final service = ref.read(galleryServiceProvider);
+      final fixed = await fixExifOrientation(File(xfile.path));
       final result = await service.uploadImage(
-        File(xfile.path),
+        fixed,
         prefix: 'products',
       );
       final url = result['medium_url'] as String? ?? '';
