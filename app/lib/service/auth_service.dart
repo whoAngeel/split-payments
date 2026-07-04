@@ -56,6 +56,19 @@ class AuthService {
     return User.fromJson(json as Map<String, dynamic>);
   }
 
+  Future<void> forgotPassword(String email) async {
+    _logger.i('Requesting password reset for $email');
+    await _api.post('/api/auth/forgot-password', body: {'email': email});
+  }
+
+  Future<void> resetPassword(String email, String code, String newPassword) async {
+    await _api.post(
+      '/api/auth/reset-password',
+      body: {'email': email, 'code': code, 'new_password': newPassword},
+    );
+    _logger.i('Password reset success');
+  }
+
   String? _normalizeWallet(String? wallet) {
     if (wallet == null || wallet.trim().isEmpty) return null;
     final w = wallet.trim();

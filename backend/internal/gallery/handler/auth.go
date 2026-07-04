@@ -74,6 +74,46 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
+type forgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+type resetPasswordRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	Code        string `json:"code" binding:"required,len=6"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var req forgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.svc.RequestPasswordReset(req.Email); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not process request"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "if the account exists, a recovery code was sent"})
+}
+
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req resetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.svc.ResetPassword(req.Email, req.Code, req.NewPassword); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "password updated"})
+}
+
 func (h *AuthHandler) Me(c *gin.Context) {
 	userID := c.GetUint("userID")
 	galleryID := c.GetUint("galleryID")
