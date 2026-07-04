@@ -16,6 +16,12 @@ type Config struct {
 	MinioAccessKey string
 	MinioSecretKey string
 	MinioBucket    string
+	SMTPHost       string
+	SMTPPort       string
+	SMTPUser       string
+	SMTPPassword   string
+	SMTPFrom       string
+	ResendAPIKey   string
 }
 
 func Load() *Config {
@@ -31,5 +37,11 @@ func Load() *Config {
 		MinioAccessKey: os.Getenv("MINIO_ACCESS_KEY"),
 		MinioSecretKey: os.Getenv("MINIO_SECRET_KEY"),
 		MinioBucket:    os.Getenv("MINIO_BUCKET"),
+		SMTPHost:       os.Getenv("SMTP_HOST"),
+		SMTPPort:       os.Getenv("SMTP_PORT"),
+		SMTPUser:       os.Getenv("SMTP_USER"),
+		SMTPPassword:   os.Getenv("SMTP_PASSWORD"),
+		SMTPFrom:       os.Getenv("SMTP_FROM"),
+		ResendAPIKey:   os.Getenv("RESEND_API_KEY"),
 	}
 }

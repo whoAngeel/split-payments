@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/whoAngeel/openpayments/internal/gallery/config"
 	"github.com/whoAngeel/openpayments/internal/gallery/handler"
+	"github.com/whoAngeel/openpayments/internal/gallery/mailer"
 	"github.com/whoAngeel/openpayments/internal/gallery/middleware"
 	"github.com/whoAngeel/openpayments/internal/gallery/model"
 	"github.com/whoAngeel/openpayments/internal/gallery/service"
@@ -44,6 +45,7 @@ func main() {
 		&model.Commission{},
 		&model.Favorite{},
 		&model.Payment{},
+		&model.PasswordReset{},
 	); err != nil {
 		logger.Fatal("migration", "err", err)
 	}
@@ -51,6 +53,20 @@ func main() {
 	logger.Info("database migrated")
 
 	authSvc := service.NewAuthService(db, cfg.JWTSecret, cfg.InviteCode)
+	if cfg.ResendAPIKey != "" {
+		from := cfg.SMTPFrom
+		if from == "" {
+			from = "noreply@splitpayments.app"
+		}
+		authSvc.SetMailer(mailer.NewResend(cfg.ResendAPIKey, from))
+		logger.Info("resend mailer configured", "from", from)
+	} else if cfg.SMTPHost != "" {
+		authSvc.SetMailer(mailer.NewSMTP(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPFrom))
+		logger.Info("smtp mailer configured", "host", cfg.SMTPHost)
+	} else {
+		authSvc.SetMailer(mailer.NewLog(logger))
+		logger.Warn("no mailer configured, password reset codes will be written to the log")
+	}
 	gallerySvc := service.NewGalleryService(db)
 	artisanSvc := service.NewArtisanService(db)
 	productSvc := service.NewProductService(db)
@@ -91,6 +107,8 @@ func main() {
 	{
 		auth.POST("/register", authHandler.Register)
 		auth.POST("/login", authHandler.Login)
+		auth.POST("/forgot-password", authHandler.ForgotPassword)
+		auth.POST("/reset-password", authHandler.ResetPassword)
 	}
 
 	// Public explore

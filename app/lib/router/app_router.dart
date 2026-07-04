@@ -15,6 +15,7 @@ import 'package:openpayments_app/screen/admin/products/product_detail_screen.dar
 import 'package:openpayments_app/screen/admin/settings/settings_screen.dart';
 import 'package:openpayments_app/screen/checkout/checkout_screen.dart';
 import 'package:openpayments_app/screen/home_screen.dart';
+import 'package:openpayments_app/screen/auth/forgot_password_screen.dart';
 import 'package:openpayments_app/screen/auth/login_screen.dart';
 import 'package:openpayments_app/screen/auth/register_screen.dart';
 import 'package:openpayments_app/screen/orders/orders_screen.dart';
@@ -53,7 +54,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isAdmin = session?.isAdmin ?? false;
       final isLoginRoute =
           state.matchedLocation == '/login' ||
-          state.matchedLocation == '/register';
+          state.matchedLocation == '/register' ||
+          state.matchedLocation == '/forgot-password';
 
       if (!isLoggedIn && !isLoginRoute) return '/login';
       if (isLoggedIn && isLoginRoute) {
@@ -202,6 +204,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/register',
         name: 'register',
         builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        name: 'forgotPassword',
+        builder: (context, state) => const ForgotPasswordScreen(),
       ),
       GoRoute(
         path: '/payment/complete',

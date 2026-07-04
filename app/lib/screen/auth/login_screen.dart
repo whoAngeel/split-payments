@@ -62,7 +62,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (msg.contains('timeout') || msg.contains('timed out')) {
       return 'Server took too long. Try again';
     }
-    return 'DEBUG: ${error.toString()}';
+    if (msg.contains('socket') || msg.contains('connection') || msg.contains('network')) {
+      return 'No connection. Check your internet';
+    }
+    return 'Error: ${error.toString()}';
   }
 
   @override

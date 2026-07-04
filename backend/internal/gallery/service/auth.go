@@ -1,23 +1,42 @@
 package service
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/whoAngeel/openpayments/internal/gallery/mailer"
 	"github.com/whoAngeel/openpayments/internal/gallery/model"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+)
+
+const (
+	resetCodeTTL     = 15 * time.Minute
+	maxResetAttempts = 5
 )
 
 type AuthService struct {
 	db         *gorm.DB
 	secret     []byte
 	inviteCode string
+	mailer     mailer.Mailer
 }
 
 func NewAuthService(db *gorm.DB, secret string, inviteCode string) *AuthService {
 	return &AuthService{db: db, secret: []byte(secret), inviteCode: inviteCode}
+}
+
+// SetMailer configures how password reset codes are delivered.
+// Without a mailer, RequestPasswordReset still creates the code but
+// has no way to deliver it.
+func (s *AuthService) SetMailer(m mailer.Mailer) {
+	s.mailer = m
 }
 
 func (s *AuthService) Register(email, password, name, walletAddressURL, role, galleryName, requestInviteCode string) (*model.User, string, error) {
@@ -125,6 +144,109 @@ func (s *AuthService) Login(email, password string) (*model.User, string, error)
 	}
 
 	return &user, token, nil
+}
+
+// RequestPasswordReset generates a one-time 6-digit code for the account,
+// stores its hash, and delivers it via the configured mailer. It reports
+// success even when the email is unknown so callers can't enumerate accounts.
+func (s *AuthService) RequestPasswordReset(email string) error {
+	var user model.User
+	if err := s.db.Where("email = ?", email).First(&user).Error; err != nil {
+		return nil
+	}
+
+	code, err := generateResetCode()
+	if err != nil {
+		return fmt.Errorf("generating reset code: %w", err)
+	}
+
+	hash := sha256.Sum256([]byte(code))
+	reset := model.PasswordReset{
+		UserID:    user.ID,
+		CodeHash:  hex.EncodeToString(hash[:]),
+		ExpiresAt: time.Now().Add(resetCodeTTL),
+	}
+
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		if err := tx.Model(&model.PasswordReset{}).
+			Where("user_id = ? AND used_at IS NULL", user.ID).
+			Update("used_at", &now).Error; err != nil {
+			return fmt.Errorf("invalidating previous codes: %w", err)
+		}
+		if err := tx.Create(&reset).Error; err != nil {
+			return fmt.Errorf("creating reset code: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	if s.mailer == nil {
+		return fmt.Errorf("no mailer configured")
+	}
+
+	subject := "Código de recuperación de contraseña"
+	body := fmt.Sprintf(
+		"Hola %s,\n\nTu código para restablecer la contraseña es: %s\n\nExpira en 15 minutos. Si no solicitaste este cambio, ignora este mensaje.",
+		user.Name, code,
+	)
+	return s.mailer.Send(user.Email, subject, body)
+}
+
+// ResetPassword verifies the code sent to the account's email and, if valid,
+// replaces the password. Codes are single-use, expire after resetCodeTTL and
+// allow at most maxResetAttempts wrong tries.
+func (s *AuthService) ResetPassword(email, code, newPassword string) error {
+	invalid := fmt.Errorf("invalid or expired code")
+
+	var user model.User
+	if err := s.db.Where("email = ?", email).First(&user).Error; err != nil {
+		return invalid
+	}
+
+	var reset model.PasswordReset
+	if err := s.db.
+		Where("user_id = ? AND used_at IS NULL AND expires_at > ?", user.ID, time.Now()).
+		Order("id DESC").First(&reset).Error; err != nil {
+		return invalid
+	}
+
+	if reset.Attempts >= maxResetAttempts {
+		return fmt.Errorf("too many attempts, request a new code")
+	}
+
+	hash := sha256.Sum256([]byte(code))
+	if subtle.ConstantTimeCompare([]byte(hex.EncodeToString(hash[:])), []byte(reset.CodeHash)) != 1 {
+		s.db.Model(&reset).Update("attempts", reset.Attempts+1)
+		return invalid
+	}
+
+	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("hashing password: %w", err)
+	}
+
+	now := time.Now()
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.User{}).Where("id = ?", user.ID).
+			Update("password_hash", string(newHash)).Error; err != nil {
+			return fmt.Errorf("updating password: %w", err)
+		}
+		if err := tx.Model(&reset).Update("used_at", &now).Error; err != nil {
+			return fmt.Errorf("marking code as used: %w", err)
+		}
+		return nil
+	})
+}
+
+func generateResetCode() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%06d", n.Int64()), nil
 }
 
 func (s *AuthService) ValidateToken(tokenStr string) (uint, string, uint, error) {
