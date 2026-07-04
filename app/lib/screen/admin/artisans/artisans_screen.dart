@@ -92,7 +92,7 @@ class _AdminArtisansScreenState extends ConsumerState<AdminArtisansScreen> {
                       children: [
                         Text(
                           'Artesanos',
-                          style: tt.titleLarge?.copyWith(
+                          style: tt.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: cs.onSurface,
                           ),

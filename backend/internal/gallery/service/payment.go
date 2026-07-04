@@ -35,8 +35,13 @@ func (s *PaymentService) Save(input SavePaymentInput) (*model.Payment, error) {
 	if len(product.Artisan.Galleries) > 0 {
 		gallery := product.Artisan.Galleries[0]
 		galleryID = gallery.ID
-		if gallery.Commission != nil {
-			galleryShare = product.BasePrice * int64(gallery.Commission.Rate) / 10000
+
+		commissionRate := product.CommissionRate
+		if commissionRate == 0 && gallery.Commission != nil {
+			commissionRate = gallery.Commission.Rate
+		}
+		if commissionRate > 0 {
+			galleryShare = product.BasePrice * int64(commissionRate) / 10000
 			artisanShare = product.BasePrice - galleryShare
 		}
 	}

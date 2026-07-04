@@ -6,17 +6,23 @@
 - **Causa:** El checkout usaba `gallery.Commission.Rate` (tabla `commissions`, seteada por API separada) en vez de `product.CommissionRate` (seteado al crear el producto).
 - **Fix:** Ahora usa `product.CommissionRate` como fuente primaria, con fallback a `gallery.Commission.Rate` si es 0.
 
-## Checkout: no se ve la imagen del producto
+## ~~Checkout: no se ve la imagen del producto~~ :heavy_check_mark: arreglado
 
-- **Archivo probable:** `app/lib/screen/checkout/checkout_screen.dart` o `app/lib/screen/explore/product_detail_screen.dart`
-- **Descripción:** En la pantalla de checkout, la imagen del producto no se renderiza.
-- **Posible causa:** La URL de la imagen usa `http` en vez de `https`, o la ruta no se construye correctamente con el `baseUrl` actual (Cloudflare tunnel).
+- **Archivo:** `app/lib/screen/checkout/checkout_screen.dart`
+- **Causa:** La imagen usaba `product.imageUrl` (ruta relativa) sin anteponer `baseUrl`. Otros widgets como `product_card.dart` sí lo hacen.
+- **Fix:** Agregada la misma lógica de `product_card.dart`: si la URL no empieza con `http`, se antepone `baseUrl`.
 
-## Cámara: foto en portrait se guarda como landscape
+## ~~Dashboard: comisión muestra 0~~ :heavy_check_mark: arreglado
 
-- **Archivo probable:** `app/lib/screen/admin/products/product_form_screen.dart` (captura de imagen)
-- **Descripción:** Al tomar una foto con el teléfono en posición vertical, la imagen se guarda rotada 90°, como si estuviera en horizontal. Solo salen bien si se toma la foto con el teléfono acostado.
-- **Posible causa:** No se está leyendo/rotando la imagen según los metadatos EXIF (`Orientation`). Al guardar la imagen redimensionada se pierde la orientación original. Falta usar `readAsBytes` + `img.decodeImage` + `bakeOrientation` del paquete `image`.
+- **Archivo:** `backend/internal/gallery/service/payment.go`
+- **Causa:** `Save()` usaba `gallery.Commission.Rate` (nunca seteado) en vez de `product.CommissionRate`.
+- **Fix:** Ahora usa `product.CommissionRate` como fuente primaria, con fallback a `gallery.Commission.Rate`.
+
+## ~~Cámara: foto en portrait se guarda como landscape~~ :heavy_check_mark: arreglado
+
+- **Archivos:** `app/lib/utils/image_utils.dart` (nuevo), `app/lib/screen/admin/products/product_form_screen.dart`, `app/lib/screen/admin/products/product_detail_screen.dart`
+- **Causa:** `image_picker` comprime la imagen sin aplicar la orientación EXIF. La imagen se subía con los píxeles en orientación nativa del sensor (landscape).
+- **Fix:** Se agregó `fixExifOrientation()` usando el paquete `image` que "hornea" la rotación EXIF en los píxeles antes de subirla.
 
 ## ~~Explore: chips de filtro~~ :heavy_check_mark: removidos
 
@@ -24,8 +30,8 @@
 - **Descripción:** Los chips de filtrado en la vista de exploración son innecesarios o confusos para el MVP actual.
 - **Acción:** Remover los chips de filtro de la UI.
 
-## Tipografía inconsistente en títulos
+## ~~Tipografía inconsistente en títulos~~ :heavy_check_mark: arreglado
 
-- **Archivos probables:** `app/lib/screen/admin/artisans/*`, `app/lib/screen/admin/products/*`
-- **Descripción:** Las vistas de Artesanos y Productos usan una tipografía diferente para los títulos que la usada en el Dashboard. Deberían ser consistentes.
-- **Acción:** Unificar el estilo de tipografía para los títulos en todas las vistas de admin.
+- **Archivos:** `app/lib/screen/admin/artisans/artisans_screen.dart`, `app/lib/screen/admin/products/products_screen.dart`
+- **Causa:** Artesanos y Productos usaban `titleLarge`, Dashboard y Pagos usaban `headlineSmall`.
+- **Fix:** Unificado a `headlineSmall` + `w700` en todas las vistas admin.

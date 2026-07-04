@@ -172,7 +172,7 @@ class _AdminProductsScreenState extends ConsumerState<AdminProductsScreen> {
                       children: [
                         Text(
                           'Productos',
-                          style: Theme.of(context).textTheme.titleLarge
+                          style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: cs.onSurface,

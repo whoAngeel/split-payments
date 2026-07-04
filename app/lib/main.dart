@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,5 +57,13 @@ Future<void> main() async {
     );
   };
 
-  runApp(const ProviderScope(child: OpenPaymentsApp()));
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = 'https://c29f10a2c4b22fa0ee9edf730e369913@o4511675592867840.ingest.us.sentry.io/4511675598438400';
+      options.tracesSampleRate = kReleaseMode ? 0.2 : 1.0;
+      options.profilesSampleRate = kReleaseMode ? 0.2 : 1.0;
+      options.environment = kReleaseMode ? 'production' : 'development';
+    },
+    appRunner: () => runApp(SentryWidget(child: const ProviderScope(child: OpenPaymentsApp()))),
+  );
 }
