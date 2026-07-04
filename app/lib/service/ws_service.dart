@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WsService {
@@ -15,7 +16,7 @@ class WsService {
 
     _channel!.stream.listen(
       (data) => onMessage(jsonDecode(data as String) as Map<String, dynamic>),
-      onError: (_) {},
+      onError: (error) => Sentry.captureException(error, stackTrace: StackTrace.current),
       onDone: () {},
     );
   }

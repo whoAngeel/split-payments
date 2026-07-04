@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:openpayments_app/service/logger_service.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -95,6 +97,16 @@ class ApiClient {
       'API ${response.statusCode}: $message',
       error: ApiException(response.statusCode, message),
     );
+
+    if (kReleaseMode) {
+      Sentry.captureException(
+        ApiException(response.statusCode, message),
+        withScope: (scope) {
+          scope.setTag('status_code', response.statusCode.toString());
+          scope.setTag('url', response.request?.url.toString() ?? '');
+        },
+      );
+    }
 
     throw ApiException(response.statusCode, message);
   }
