@@ -37,21 +37,22 @@ func main() {
 		&model.Artisan{},
 		&model.Product{},
 		&model.Commission{},
+		&model.Favorite{},
 	); err != nil {
 		fmt.Println("migration:", err)
 		os.Exit(1)
 	}
 
-	authSvc := service.NewAuthService(db, "dev-secret-change-in-production")
+	authSvc := service.NewAuthService(db, "dev-secret-change-in-production", "")
 	gallerySvc := service.NewGalleryService(db)
 	artisanSvc := service.NewArtisanService(db)
 	productSvc := service.NewProductService(db)
 
-	seedUser := func(email, password, name, wallet string) model.User {
+	seedUser := func(email, password, name, role, wallet string) model.User {
 		var u model.User
 		db.Where("email = ?", email).First(&u)
 		if u.ID == 0 {
-			newUser, _, err := authSvc.Register(email, password, name)
+			newUser, _, err := authSvc.Register(email, password, name, "", role, "", "")
 			if err != nil {
 				fmt.Printf("register %s: %v\n", email, err)
 				os.Exit(1)
@@ -65,8 +66,8 @@ func main() {
 		return u
 	}
 
-	galleryOwner := seedUser("gallery@art.com", "password123", "Gallery Owner", "https://ilp.interledger-test.dev/angeel")
-	seedUser("buyer@test.com", "password123", "Carlos Comprador", "https://ilp.interledger-test.dev/angeel")
+	galleryOwner := seedUser("gallery@art.com", "password123", "Gallery Owner", "gallery_admin", "https://ilp.interledger-test.dev/angeel")
+	seedUser("buyer@test.com", "password123", "Carlos Comprador", "buyer", "https://ilp.interledger-test.dev/angeel")
 	fmt.Println()
 
 	var count int64
@@ -89,15 +90,15 @@ func main() {
 	var artisanCount int64
 	db.Model(&model.Artisan{}).Count(&artisanCount)
 	if artisanCount == 0 {
-		artisan1, _ := artisanSvc.Create("María Hernández", "https://ilp.interledger-test.dev/mochi")
-		artisan2, _ := artisanSvc.Create("Juan López", "https://ilp.interledger-test.dev/angeel")
+		artisan1, _ := artisanSvc.Create("María Hernández", "https://ilp.interledger-test.dev/mochi", "", "", "", "", "", "")
+		artisan2, _ := artisanSvc.Create("Juan López", "https://ilp.interledger-test.dev/angeel", "", "", "", "", "", "")
 		gallerySvc.AddArtisan(gallery.ID, galleryOwner.ID, artisan1.ID)
 		gallerySvc.AddArtisan(gallery.ID, galleryOwner.ID, artisan2.ID)
 		fmt.Printf("Artisans: %s, %s\n", artisan1.Name, artisan2.Name)
 
-		_, _ = productSvc.Create(artisan1.ID, "Alejibre de madera", "USD", 5000, 2, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400")
-		_, _ = productSvc.Create(artisan1.ID, "Máscara tradicional", "USD", 3500, 2, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400")
-		_, _ = productSvc.Create(artisan2.ID, "Tapete tejido", "USD", 8000, 2, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400")
+		_, _ = productSvc.Create(artisan1.ID, "Alejibre de madera", "USD", 5000, 2, 0, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400", "", "", "", "")
+		_, _ = productSvc.Create(artisan1.ID, "Máscara tradicional", "USD", 3500, 2, 0, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400", "", "", "", "")
+		_, _ = productSvc.Create(artisan2.ID, "Tapete tejido", "USD", 8000, 2, 0, "https://images.unsplash.com/photo-1598214692523-866fe3f8b6bf?w=400", "", "", "", "")
 		fmt.Println("Products: Alebrije ($50.00), Máscara ($35.00), Tapete ($80.00)")
 	} else {
 		fmt.Println("Data already seeded, skipping.")

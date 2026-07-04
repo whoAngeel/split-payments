@@ -1,16 +1,64 @@
-# app
+# Split Payments App
 
-A new Flutter project.
+Flutter app for the Open Payments / Interledger artisan gallery.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## Emuladores
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+# Listar emuladores disponibles
+flutter emulators
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+# Lanzar emulador (escoge uno)
+flutter emulators --launch Pixel_8a
+flutter emulators --launch pixel
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# Ver dispositivos conectados
+flutter devices
+```
+
+## Correr la app
+
+```bash
+# En el emulador activo
+flutter run
+
+# En dispositivo específico (ID del `flutter devices`)
+flutter run -d <device-id>
+
+# En Linux desktop
+flutter run -d linux
+
+# Con hot reload activo (ya incluido en `flutter run`)
+# r → hot reload
+# R → hot restart
+# q → salir
+```
+
+## Build
+
+```bash
+# APK debug
+flutter build apk --debug
+
+# APK release
+flutter build apk --release
+
+# App Bundle (Play Store)
+flutter build appbundle
+```
+
+## Dependencias
+
+```bash
+flutter pub get
+flutter pub upgrade
+```
+
+## Análisis y tests
+
+```bash
+flutter analyze
+flutter test
+```

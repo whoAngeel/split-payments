@@ -22,6 +22,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		&model.Artisan{},
 		&model.Product{},
 		&model.Commission{},
+		&model.PasswordReset{},
 	); err != nil {
 		t.Fatalf("failed to migrate: %v", err)
 	}

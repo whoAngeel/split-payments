@@ -7,10 +7,10 @@ import (
 func TestProductService_Create(t *testing.T) {
 	db := setupTestDB(t)
 
-	artisan, _ := NewArtisanService(db).Create("Artisan", "https://w.example/a")
+	artisan, _ := NewArtisanService(db).Create("Artisan", "https://w.example/a", "", "", "", "", "", "")
 
 	svc := NewProductService(db)
-	product, err := svc.Create(artisan.ID, "Product 1", "USD", 10000, 2, "")
+	product, err := svc.Create(artisan.ID, "Product 1", "USD", 10000, 2, 0, "", "", "", "", "")
 	if err != nil {
 		t.Fatalf("create product failed: %v", err)
 	}
@@ -30,7 +30,7 @@ func TestProductService_CreateInvalidArtisan(t *testing.T) {
 	db := setupTestDB(t)
 	svc := NewProductService(db)
 
-	_, err := svc.Create(999, "Product", "USD", 100, 2, "")
+	_, err := svc.Create(999, "Product", "USD", 100, 2, 0, "", "", "", "", "")
 	if err == nil {
 		t.Fatal("expected foreign key error, got nil")
 	}
@@ -39,13 +39,13 @@ func TestProductService_CreateInvalidArtisan(t *testing.T) {
 func TestProductService_GetByArtisan(t *testing.T) {
 	db := setupTestDB(t)
 
-	artisan1, _ := NewArtisanService(db).Create("A1", "https://w.example/a1")
-	artisan2, _ := NewArtisanService(db).Create("A2", "https://w.example/a2")
+	artisan1, _ := NewArtisanService(db).Create("A1", "https://w.example/a1", "", "", "", "", "", "")
+	artisan2, _ := NewArtisanService(db).Create("A2", "https://w.example/a2", "", "", "", "", "", "")
 
 	svc := NewProductService(db)
-	_, _ = svc.Create(artisan1.ID, "P1", "USD", 100, 2, "")
-	_, _ = svc.Create(artisan1.ID, "P2", "USD", 200, 2, "")
-	_, _ = svc.Create(artisan2.ID, "P3", "USD", 300, 2, "")
+	_, _ = svc.Create(artisan1.ID, "P1", "USD", 100, 2, 0, "", "", "", "", "")
+	_, _ = svc.Create(artisan1.ID, "P2", "USD", 200, 2, 0, "", "", "", "", "")
+	_, _ = svc.Create(artisan2.ID, "P3", "USD", 300, 2, 0, "", "", "", "", "")
 
 	products, err := svc.GetByArtisan(artisan1.ID)
 	if err != nil {
@@ -58,10 +58,10 @@ func TestProductService_GetByArtisan(t *testing.T) {
 
 func TestProductService_Delete(t *testing.T) {
 	db := setupTestDB(t)
-	artisan, _ := NewArtisanService(db).Create("A", "https://w.example/a")
+	artisan, _ := NewArtisanService(db).Create("A", "https://w.example/a", "", "", "", "", "", "")
 	svc := NewProductService(db)
 
-	product, _ := svc.Create(artisan.ID, "P", "USD", 100, 2, "")
+	product, _ := svc.Create(artisan.ID, "P", "USD", 100, 2, 0, "", "", "", "", "")
 
 	if err := svc.Delete(product.ID); err != nil {
 		t.Fatalf("delete failed: %v", err)

@@ -2,12 +2,14 @@ package service
 
 import (
 	"testing"
+
+	"github.com/whoAngeel/openpayments/internal/gallery/model"
 )
 
 func TestGalleryService_Create(t *testing.T) {
 	db := setupTestDB(t)
-	authSvc := NewAuthService(db, "test-secret")
-	user, _, _ := authSvc.Register("owner@test.com", "password123", "Owner")
+	user := model.User{Email: "owner@test.com", PasswordHash: "x", Name: "Owner", Role: "gallery_admin"}
+	db.Create(&user)
 
 	svc := NewGalleryService(db)
 	gallery, err := svc.CreateGallery(user.ID, "My Gallery")
@@ -23,29 +25,58 @@ func TestGalleryService_Create(t *testing.T) {
 	}
 }
 
+func TestGalleryService_CreateAlreadyHasGallery(t *testing.T) {
+	db := setupTestDB(t)
+	user := model.User{Email: "owner@test.com", PasswordHash: "x", Name: "Owner", Role: "gallery_admin"}
+	db.Create(&user)
+
+	svc := NewGalleryService(db)
+	_, err := svc.CreateGallery(user.ID, "First")
+	if err != nil {
+		t.Fatalf("first create failed: %v", err)
+	}
+
+	_, err = svc.CreateGallery(user.ID, "Second")
+	if err == nil {
+		t.Fatal("expected error when user already has a gallery")
+	}
+}
+
+func TestGalleryService_CreateBuyerCannotCreate(t *testing.T) {
+	db := setupTestDB(t)
+	user := model.User{Email: "buyer@test.com", PasswordHash: "x", Name: "Buyer", Role: "buyer"}
+	db.Create(&user)
+
+	svc := NewGalleryService(db)
+	_, err := svc.CreateGallery(user.ID, "Gallery")
+	if err == nil {
+		t.Fatal("expected error when buyer creates gallery")
+	}
+}
+
 func TestGalleryService_List(t *testing.T) {
 	db := setupTestDB(t)
-	authSvc := NewAuthService(db, "test-secret")
-	user, _, _ := authSvc.Register("list@test.com", "password123", "User")
+	user := model.User{Email: "list@test.com", PasswordHash: "x", Name: "User", Role: "gallery_admin"}
+	db.Create(&user)
 
 	svc := NewGalleryService(db)
 	_, _ = svc.CreateGallery(user.ID, "G1")
-	_, _ = svc.CreateGallery(user.ID, "G2")
 
 	galleries, err := svc.ListGalleries(user.ID)
 	if err != nil {
 		t.Fatalf("list failed: %v", err)
 	}
-	if len(galleries) != 2 {
-		t.Errorf("expected 2, got %d", len(galleries))
+	if len(galleries) != 1 {
+		t.Errorf("expected 1, got %d", len(galleries))
 	}
 }
 
 func TestGalleryService_ListOnlyOwn(t *testing.T) {
 	db := setupTestDB(t)
-	authSvc := NewAuthService(db, "test-secret")
-	user1, _, _ := authSvc.Register("u1@test.com", "password123", "U1")
-	user2, _, _ := authSvc.Register("u2@test.com", "password123", "U2")
+	user1 := model.User{Email: "u1@test.com", PasswordHash: "x", Name: "U1", Role: "gallery_admin"}
+	db.Create(&user1)
+	user2 := model.User{Email: "u2@test.com", PasswordHash: "x", Name: "U2", Role: "gallery_admin"}
+	db.Create(&user2)
 
 	svc := NewGalleryService(db)
 	_, _ = svc.CreateGallery(user1.ID, "G1")
@@ -65,8 +96,8 @@ func TestGalleryService_ListOnlyOwn(t *testing.T) {
 
 func TestGalleryService_SetCommission(t *testing.T) {
 	db := setupTestDB(t)
-	authSvc := NewAuthService(db, "test-secret")
-	user, _, _ := authSvc.Register("comm@test.com", "password123", "User")
+	user := model.User{Email: "comm@test.com", PasswordHash: "x", Name: "User", Role: "gallery_admin"}
+	db.Create(&user)
 
 	svc := NewGalleryService(db)
 	gallery, _ := svc.CreateGallery(user.ID, "G")
@@ -90,9 +121,10 @@ func TestGalleryService_SetCommission(t *testing.T) {
 
 func TestGalleryService_SetCommissionNotOwner(t *testing.T) {
 	db := setupTestDB(t)
-	authSvc := NewAuthService(db, "test-secret")
-	user1, _, _ := authSvc.Register("owner@test.com", "password123", "Owner")
-	user2, _, _ := authSvc.Register("hacker@test.com", "password123", "Hacker")
+	user1 := model.User{Email: "owner@test.com", PasswordHash: "x", Name: "Owner", Role: "gallery_admin"}
+	db.Create(&user1)
+	user2 := model.User{Email: "hacker@test.com", PasswordHash: "x", Name: "Hacker", Role: "gallery_admin"}
+	db.Create(&user2)
 
 	svc := NewGalleryService(db)
 	gallery, _ := svc.CreateGallery(user1.ID, "G")
@@ -105,11 +137,11 @@ func TestGalleryService_SetCommissionNotOwner(t *testing.T) {
 
 func TestGalleryService_AddRemoveArtisan(t *testing.T) {
 	db := setupTestDB(t)
-	authSvc := NewAuthService(db, "test-secret")
-	user, _, _ := authSvc.Register("g@test.com", "password123", "U")
+	user := model.User{Email: "g@test.com", PasswordHash: "x", Name: "U", Role: "gallery_admin"}
+	db.Create(&user)
 
 	artisanSvc := NewArtisanService(db)
-	artisan, _ := artisanSvc.Create("Artisan", "https://w.example/a")
+	artisan, _ := artisanSvc.Create("Artisan", "https://w.example/a", "", "", "", "", "", "")
 
 	svc := NewGalleryService(db)
 	gallery, _ := svc.CreateGallery(user.ID, "G")
