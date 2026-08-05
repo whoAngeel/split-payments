@@ -11,6 +11,27 @@
 
 ---
 
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/flutter_02.png" width="250"/></td>
+    <td><img src="docs/screenshots/flutter_03.png" width="250"/></td>
+        <td><img src="docs/screenshots/flutter_05.png" width="250"/></td>
+    <td><img src="docs/screenshots/flutter_09.png" width="250"/></td>
+
+  </tr>
+
+  <tr>
+    <td><img src="docs/screenshots/flutter_06.png" width="250"/></td>
+    <td><img src="docs/screenshots/flutter_08.png" width="250"/></td>
+    <td><img src="docs/screenshots/image.png" width="250"/></td>
+    <td></td>
+  </tr>
+</table>
+
+---
+
 ## Arquitectura y Decisiones Técnicas
 
 ### Visión General
@@ -55,7 +76,50 @@ graph LR
 | **Flutter App** | Aplicación móvil multiplataforma con roles (buyer/admin). Maneja el flujo de checkout con redirect de consentimiento y confirmación en tiempo real. |
 
 ### Patrón de Diseño: Layered Architecture por Paquete
+### Flujo de Split Payment (Open Payments + GNAP)
 
+```mermaid
+sequenceDiagram
+    participant App as Flutter App
+    participant Gallery as Gallery API
+    participant Splitter as Splitter API
+    participant RW as Recipient Wallets<br/>(Artisan + Gallery)
+    participant SW as Sender Wallet<br/>(Buyer Auth Server)
+
+    App->>Gallery: POST /checkout (product_id, wallet)
+    Gallery->>Gallery: Calcular comisión y shares
+    Gallery->>Splitter: POST /split (sender_wallet, shares[])
+
+    loop Por cada destinatario
+        Splitter->>RW: Grant (non-interactive) + Create Incoming Payment
+        RW-->>Splitter: incoming_payment_id
+        Splitter->>SW: Grant (non-interactive) + Create Quote
+        SW-->>Splitter: quote (debit_amount)
+    end
+
+    Splitter->>Splitter: Sumar debit_amounts totales
+    Splitter->>SW: Grant interactivo GNAP (outgoing, limits, redirect callback)
+    SW-->>Splitter: redirect_url + server_nonce
+    Splitter-->>Gallery: session_id + redirect_url
+    Gallery-->>App: session_id + redirect_url
+
+    App->>SW: Redirect al consent screen
+    Note over App,SW: El buyer autoriza el pago en su wallet
+
+    SW->>Splitter: GET /split/callback?session&interact_ref&hash
+    Splitter->>Splitter: Verificar SHA-256 (client_nonce + server_nonce + interact_ref + auth_server)
+    Splitter->>SW: Grant Continue (interact_ref) → access_token
+
+    loop Por cada quote
+        Splitter->>SW: Create Outgoing Payment (quote_id, token)
+        SW-->>Splitter: outgoing_payment confirmado
+    end
+
+    Splitter--)App: WebSocket: {"status": "completed"}
+    Splitter->>App: Redirect deep link: openpayments://payment/complete
+```
+
+### Patrón de Diseño: Layered Architecture por Paquete
 Cada servicio en Go sigue una estructura en capas dentro de `internal/`:
 
 ```
