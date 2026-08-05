@@ -7,7 +7,14 @@
 ![Interledger](https://img.shields.io/badge/Interledger-Open%20Payments-6CC24A?style=flat)
 ![WebSocket](https://img.shields.io/badge/WebSocket-Realtime-010101?style=flat)
 
-**Plataforma de pagos divididos sobre el protocolo Open Payments (Interledger).** Permite a galerías de arte vender productos artesanales y distribuir automáticamente el pago entre el artesano y la galería según un porcentaje de comisión configurable — sin intermediarios bancarios tradicionales, usando wallets interoperables del estándar ILP.
+**Plataforma de pagos divididos construida sobre el protocolo [Open Payments](https://openpayments.dev) de Interledger.** El reto técnico central fue integrar Go con Open Payments — un protocolo abierto para pagos programáticos sin intermediarios bancarios — y encapsularlo como un servicio genérico reutilizable (Splitter API).
+
+Como caso de uso real, la plataforma conecta **galerías de arte y artesanos de Oaxaca** con compradores (turistas, extranjeros o cualquier persona) a través de una app móvil. Los compradores exploran productos artesanales y al comprar, el pago se divide automáticamente entre el artesano y la galería según un porcentaje de comisión configurado — con total transparencia. El comprador puede ver exactamente cuánto recibe cada parte, eliminando la opacidad de los intermediarios tradicionales.
+
+**¿Por qué dos servicios?**
+- **Splitter API** — Motor genérico de split payments. No conoce artesanos ni galerías; solo recibe wallets y montos. Reutilizable para cualquier escenario de pagos divididos (marketplaces, cooperativas, propinas).
+- **Gallery API** — Dominio de negocio. Gestiona galerías, artesanos, productos y comisiones. Calcula los splits y delega la ejecución al Splitter.
+- **Flutter App** — Interfaz del comprador. Explorar catálogo, ver transparencia del split, autorizar pagos y recibir confirmación en tiempo real vía WebSocket.
 
 ---
 
