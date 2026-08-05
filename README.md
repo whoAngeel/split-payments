@@ -17,16 +17,35 @@
 
 El sistema sigue una **arquitectura de microservicios** con separación de responsabilidades por bounded context:
 
-```
-┌─────────────┐       ┌──────────────────┐       ┌──────────────────┐
-│  Flutter App │──JWT──▶   Gallery API    │─API Key─▶  Splitter API  │
-│  (Buyer/Admin)│      │  (Dominio de     │        │  (Motor genérico │
-│              │◀─WS───│   negocio)       │        │   de pagos)      │
-└─────────────┘       └──────────────────┘       └──────────────────┘
-                              │                          │
-                              ▼                          ▼
-                        PostgreSQL              Open Payments Network
-                          MinIO                 (Wallets Interledger)
+```mermaid
+graph LR
+    subgraph Client
+        App["Flutter App<br/>(Buyer / Admin)"]
+    end
+
+    subgraph Backend
+        Gallery["Gallery API<br/>:4003"]
+        Splitter["Splitter API<br/>:4004"]
+    end
+
+    subgraph Infrastructure
+        DB[(PostgreSQL)]
+        Minio[(MinIO<br/>S3 Storage)]
+    end
+
+    subgraph External
+        Wallet["Wallet Provider<br/>(Auth Server + ILP)"]
+    end
+
+    App -- "JWT / HTTPS" --> Gallery
+    App -. "WebSocket" .-> Splitter
+    Gallery -- "API Key" --> Splitter
+    Splitter -- "Open Payments<br/>(GNAP + ILP)" --> Wallet
+    App -- "Redirect de<br/>consentimiento" --> Wallet
+    Wallet -- "Callback" --> Splitter
+
+    Gallery --> DB
+    Gallery --> Minio
 ```
 
 | Servicio | Responsabilidad |
